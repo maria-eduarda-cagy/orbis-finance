@@ -97,18 +97,18 @@ export default function DailyDashboard() {
           const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [])
           const bal = balances.find((b: { date: Date; balance: number; allowance: number }) => b.date.toDateString() === d.toDateString())
           return (
-            <Card key={d.toISOString()}>
+          <Card key={d.toISOString()} className="p-3">
               <div className="flex items-center justify-between">
                 <div className="font-medium">{d.toLocaleDateString("pt-BR")}</div>
-                <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold`}>
-                  R$ {(bal?.balance || 0).toFixed(2)}
+              <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold tabular-nums`}>
+                R$ {(bal?.balance || 0).toFixed(2)}
                 </div>
               </div>
               <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                <div>Receitas: R$ {items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0).toFixed(2)}</div>
-                <div>Despesas: R$ {items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0).toFixed(2)}</div>
-                <div>Cartões: R$ {items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0).toFixed(2)}</div>
-                <div className="pt-2 text-foreground font-medium">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
+              <div className="tabular-nums">Receitas: R$ {items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0).toFixed(2)}</div>
+              <div className="tabular-nums">Despesas: R$ {items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0).toFixed(2)}</div>
+              <div className="tabular-nums">Cartões: R$ {items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0).toFixed(2)}</div>
+              <div className="pt-2 text-foreground font-medium tabular-nums">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
               </div>
             </Card>
           )
