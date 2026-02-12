@@ -9,41 +9,51 @@ html, body, :root {
 :root,
 .dark {
   color-scheme: dark;
-  --background: #0E1116;
-  --background-elevated: #1A2029;
-  --background-subtle: #151A21;
-  --foreground: #E7ECF3;
-  --muted: #1A2029;
-  --muted-foreground: #7E8A9A;
-  --card: #151A21;
-  --card-foreground: #E7ECF3;
-  --border: #2B3442;
-  --input: #1A2029;
-  --ring: #4C6FFF;
-  --primary: #4C6FFF;
-  --primary-foreground: #F5F7FB;
-  --secondary: #1F2631;
-  --secondary-foreground: #E7ECF3;
-  --accent: #22D3EE;
-  --accent-foreground: #081319;
-  --success: #3CCB7F;
-  --success-foreground: #07140E;
-  --warning: #F3B63F;
-  --warning-foreground: #1B1201;
-  --danger: #F56B6B;
+  --background: #0B0F14;
+  --background-elevated: #121824;
+  --background-subtle: #0F141E;
+  --foreground: #E6EDF6;
+  --muted: #141C2A;
+  --muted-foreground: #8FA0B6;
+  --card: #121826;
+  --card-foreground: #E6EDF6;
+  --border: #1E2A3B;
+  --input: #0F1522;
+  --ring: #86A8FF;
+  --primary: #4F7CFF;
+  --primary-foreground: #0B0F14;
+  --secondary: #162234;
+  --secondary-foreground: #D6DFEA;
+  --accent: #9B7BFF;
+  --accent-foreground: #0B0F14;
+  --success: #2ACB8A;
+  --success-foreground: #05140D;
+  --warning: #F6C453;
+  --warning-foreground: #1A1202;
+  --danger: #F26B6B;
   --danger-foreground: #1A0B0B;
-  --info: #5BC0FF;
+  --info: #4DB2FF;
   --info-foreground: #04121B;
+  --chart-1: #4F7CFF;
+  --chart-2: #19C3A6;
+  --chart-3: #F6C453;
+  --chart-4: #9B7BFF;
+  --chart-5: #F26B6B;
+  --chart-6: #5AD1FF;
+  --chart-7: #7EE7B0;
 }
 
 body {
   font-family: "Satoshi", "Manrope", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
   background: var(--background);
   color: var(--foreground);
-  background-image: radial-gradient(1200px 600px at 50% -100px, rgba(76,111,255,0.12), transparent);
+  background-image:
+    radial-gradient(1200px 600px at 15% -100px, rgba(79,124,255,0.16), transparent 60%),
+    radial-gradient(900px 500px at 85% -120px, rgba(155,123,255,0.12), transparent 60%),
+    radial-gradient(700px 400px at 50% 120%, rgba(25,195,166,0.08), transparent 70%);
   font-variant-numeric: tabular-nums;
 }
 
 .glow {
-  box-shadow: 0 0 40px rgba(76,111,255,0.25);
+  box-shadow: 0 0 40px rgba(79,124,255,0.28);
 }
