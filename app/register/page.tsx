@@ -32,16 +32,24 @@ export default function RegisterPage() {
     setMessage(null)
     setError(null)
     const supabase = getSupabase()
-    const { error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: { data: { name: values.name } }
     })
     if (err) {
-      setError("Falha no cadastro")
+      setError(err.message || "Falha no cadastro")
       return
     }
-    setMessage("Cadastro realizado. Verifique seu email e faça login.")
+    if (data?.user?.identities?.length === 0) {
+      setError("Email já cadastrado. Faça login.")
+      return
+    }
+    if (!data?.session) {
+      setMessage("Cadastro realizado. Verifique seu email para confirmar a conta antes de entrar.")
+      return
+    }
+    setMessage("Cadastro realizado. Você já pode entrar.")
     setTimeout(() => router.push("/login"), 1000)
   }
 
@@ -49,31 +57,34 @@ export default function RegisterPage() {
     <main className="px-4 py-10">
       <div className="max-w-sm mx-auto">
         <Card className="p-6">
-          <h1 className="text-xl font-semibold mb-4">Criar conta</h1>
+          <div className="mb-4">
+            <h1 className="text-xl font-semibold">Criar conta</h1>
+            <p className="text-sm text-muted-foreground">Comece a acompanhar suas metas e projeções.</p>
+          </div>
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label className="text-sm">Nome</label>
+              <label className="text-sm text-muted-foreground">Nome</label>
               <Input placeholder="Seu nome" {...register("name")} />
               {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
             <div>
-              <label className="text-sm">Email</label>
+              <label className="text-sm text-muted-foreground">Email</label>
               <Input type="email" placeholder="voce@exemplo.com" {...register("email")} />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
             <div>
-              <label className="text-sm">Senha</label>
+              <label className="text-sm text-muted-foreground">Senha</label>
               <Input type="password" placeholder="••••••" {...register("password")} />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {message && <p className="text-green-500 text-sm">{message}</p>}
+            {error && <p className="text-danger text-sm">{error}</p>}
+            {message && <p className="text-success text-sm">{message}</p>}
             <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Enviando..." : "Cadastrar"}
             </Button>
           </form>
-          <p className="text-sm text-neutral-400 mt-4">
-            Já possui conta? <Link href="/login" className="text-brand">Entrar</Link>
+          <p className="text-sm text-muted-foreground mt-4">
+            Já possui conta? <Link href="/login" className="text-primary hover:brightness-110">Entrar</Link>
           </p>
         </Card>
       </div>
