@@ -1,10 +1,11 @@
 "use client"
-import { useState, ChangeEvent } from "react"
+import { useState, ChangeEvent, useEffect } from "react"
 import { getSupabase } from "../../lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Card } from "../../components/ui/card"
+import Link from "next/link"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,6 +15,20 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
+
+  useEffect(() => {
+    async function checkSession() {
+      const supabase = getSupabase()
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        router.replace("/monthly")
+        return
+      }
+      setCheckingSession(false)
+    }
+    checkSession()
+  }, [router])
 
   async function onSubmit() {
     setLoading(true)
@@ -25,7 +40,7 @@ export default function LoginPage() {
       setError(err.message || "Falha ao entrar")
       return
     }
-    router.push("/dashboard/month")
+    router.push("/monthly")
   }
 
   async function onResetPassword() {
@@ -47,10 +62,22 @@ export default function LoginPage() {
     setInfo("Email de recuperação enviado. Verifique sua caixa de entrada.")
   }
 
+  if (checkingSession) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <Card className="p-6 space-y-4">
+            <div className="text-sm text-muted-foreground">Verificando sessão...</div>
+          </Card>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main className="px-4 py-10">
-      <div className="max-w-sm mx-auto">
-        <Card className="p-6 space-y-4">
+    <main className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <Card className="p-6 space-y-5">
           <div>
             <h1 className="text-2xl font-semibold">Entrar</h1>
             <p className="text-sm text-muted-foreground">Acesse sua conta e acompanhe suas projeções.</p>
@@ -65,9 +92,14 @@ export default function LoginPage() {
           </div>
           {error && <p className="text-danger text-sm">{error}</p>}
           {info && <p className="text-success text-sm">{info}</p>}
-          <Button onClick={onSubmit} disabled={loading} className="w-full">
-            {loading ? "Entrando..." : "Entrar"}
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={onSubmit} disabled={loading} className="w-full">
+              {loading ? "Entrando..." : "Entrar"}
+            </Button>
+            <p className="text-sm text-muted-foreground text-center">
+              Não possui conta? <Link href="/register" className="text-primary hover:brightness-110">Criar conta</Link>
+            </p>
+          </div>
           <button
             type="button"
             onClick={onResetPassword}

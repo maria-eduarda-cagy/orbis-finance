@@ -112,7 +112,7 @@ export default function HomePage() {
       <footer className="max-w-5xl mx-auto pt-8 border-t border-border text-muted-foreground text-sm flex items-center justify-between">
         <span>© {new Date().getFullYear()} Orbis Finance</span>
         <div className="flex gap-3">
-          <Link href="/dashboard/month">Dashboard</Link>
+          <Link href="/monthly">Dashboard</Link>
           <Link href="/import">Importar CSV</Link>
         </div>
       </footer>

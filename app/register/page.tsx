@@ -54,8 +54,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="px-4 py-10">
-      <div className="max-w-sm mx-auto">
+    <main className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
         <Card className="p-6">
           <div className="mb-4">
             <h1 className="text-xl font-semibold">Criar conta</h1>
