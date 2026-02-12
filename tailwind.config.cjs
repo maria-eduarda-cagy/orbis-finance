@@ -8,6 +8,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          DEFAULT: "#6E72FC",
+          dark: "#4F52CC",
+          glow: "#8A8DFF"
+        }
+      },
+      backgroundImage: {
+        "fintech-gradient": "radial-gradient(1200px 600px at 50% -100px, rgba(110,114,252,0.25), transparent)"
         background: "var(--background)",
         "background-elevated": "var(--background-elevated)",
         "background-subtle": "var(--background-subtle)",
