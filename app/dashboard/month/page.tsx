@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
-import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { AppHeader } from "../../../components/AppHeader"
 import { CardTransaction } from "../../../lib/types"
 
@@ -19,6 +19,7 @@ export default function MonthlyDashboard() {
   const [hideNegative, setHideNegative] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const [includeCarry, setIncludeCarry] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
 
   const { data, refetch, isLoading } = useQuery({
@@ -34,6 +35,9 @@ export default function MonthlyDashboard() {
   }, [data])
 
   const prevNet = useMemo(() => {
+    const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
+    const createdMonth = createdAt ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}` : null
+    if (createdMonth && month <= createdMonth) return 0
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const prevStatements = data?.prevStatements || []
@@ -57,16 +61,21 @@ export default function MonthlyDashboard() {
     return hideNegative ? list.filter((t) => Number(t.amount_brl) >= 0) : list
   }, [data, hideNegative])
 
+  const filteredTransactions = useMemo(() => {
+    if (!selectedCategory) return transactions
+    return transactions.filter((t) => (t.category || "Sem categoria") === selectedCategory)
+  }, [transactions, selectedCategory])
+
   const totalsByCard = useMemo(() => {
     const map = new Map<string, number>()
-    for (const t of transactions) {
+    for (const t of filteredTransactions) {
       const name = t.cards?.name || "Cartão"
       map.set(name, (map.get(name) || 0) + Number(t.amount_brl || 0))
     }
     return Array.from(map.entries()).map(([name, total]) => ({ name, total }))
-  }, [transactions])
+  }, [filteredTransactions])
 
-  const totalsByCategory = useMemo(() => {
+  const totalsByCategoryAll = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of transactions) {
       const name = t.category || "Sem categoria"
@@ -75,10 +84,17 @@ export default function MonthlyDashboard() {
     return Array.from(map.entries()).map(([name, total]) => ({ name, total }))
   }, [transactions])
 
+  const totalsByCategory = useMemo(() => {
+    if (!selectedCategory) return totalsByCategoryAll
+    return totalsByCategoryAll.filter((t) => t.name === selectedCategory)
+  }, [totalsByCategoryAll, selectedCategory])
+
   const visibleTransactions = useMemo(() => {
-    if (showAll) return transactions
-    return transactions.slice(0, 20)
-  }, [transactions, showAll])
+    if (showAll) return filteredTransactions
+    return filteredTransactions.slice(0, 20)
+  }, [filteredTransactions, showAll])
+
+  const barColors = ["#0EA5E9", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#14B8A6", "#F97316"]
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -127,7 +143,7 @@ export default function MonthlyDashboard() {
       <Card className="h-72">
         <div className="text-sm text-foreground px-4 pt-3">Gastos por categoria (R$)</div>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={totalsByCategory}>
+          <BarChart data={totalsByCategoryAll}>
             <XAxis dataKey="name" />
             <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} />
             <Tooltip
@@ -141,7 +157,27 @@ export default function MonthlyDashboard() {
               labelStyle={{ color: "var(--muted-foreground)" }}
               itemStyle={{ color: "var(--foreground)" }}
             />
-            <Bar dataKey="total" fill="#6E72FC" stroke="#4F52CC" />
+            <Bar
+              dataKey="total"
+              activeBar={{ fillOpacity: 0.4 }}
+              onClick={(data) => {
+                const name = data?.name as string | undefined
+                if (!name) return
+                setSelectedCategory((current) => (current === name ? null : name))
+              }}
+            >
+              {totalsByCategoryAll.map((item, index) => {
+                const isSelected = selectedCategory ? item.name === selectedCategory : true
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={barColors[index % barColors.length]}
+                    fillOpacity={isSelected ? 1 : 0.3}
+                    style={{ cursor: "pointer" }}
+                  />
+                )
+              })}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Card>
@@ -155,7 +191,7 @@ export default function MonthlyDashboard() {
             <input type="checkbox" checked={hideNegative} onChange={(e) => setHideNegative(e.target.checked)} />
             Ocultar valores negativos (pagamentos)
           </label>
-          {transactions.length > 20 && (
+          {filteredTransactions.length > 20 && (
             <Button onClick={() => setShowAll((v) => !v)}>
               {showAll ? "Mostrar menos" : "Mostrar todos"}
             </Button>
@@ -188,7 +224,7 @@ export default function MonthlyDashboard() {
           </Card>
         </div>
         <div className="mt-3 space-y-2 text-sm">
-          {transactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
+          {filteredTransactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
           {visibleTransactions.map((t: CardTransaction) => (
             <div key={t.id} className="flex flex-col gap-1 border-b pb-2 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-2">

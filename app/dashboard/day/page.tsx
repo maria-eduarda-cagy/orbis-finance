@@ -30,6 +30,9 @@ export default function DailyDashboard() {
   })
 
   const startBalance = useMemo(() => {
+    const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
+    const createdMonth = createdAt ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}` : null
+    if (createdMonth && month <= createdMonth) return 0
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const prevStatements = data?.prevStatements || []
