@@ -35,3 +35,19 @@ export type CardStatement = {
   paid_at: string | null
   snooze_until?: string | null
 }
+
+export type CardTransaction = {
+  id: string
+  user_id: string
+  card_id: string
+  statement_month: string
+  due_date: string
+  purchase_date: string
+  category: string | null
+  description: string | null
+  installment: string | null
+  amount_usd: number | null
+  fx_rate: number | null
+  amount_brl: number
+  cards?: { name: string }
+}

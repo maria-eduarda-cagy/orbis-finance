@@ -1,5 +1,5 @@
 import { getSupabase } from "./supabaseClient"
-import { BillRule, CardStatement, IncomeRule } from "./types"
+import { BillRule, CardStatement, IncomeRule, CardTransaction } from "./types"
 
 export async function fetchMonthData(month: string) {
   try {
@@ -17,13 +17,19 @@ export async function fetchMonthData(month: string) {
       .select("*")
       .eq("statement_month", month)
       .eq("status", "open")
+    const { data: transactions } = await supabase
+      .from("card_transactions")
+      .select("*, cards(name)")
+      .eq("statement_month", month)
+      .order("purchase_date", { ascending: true })
     return {
       incomes: (incomes || []) as IncomeRule[],
       bills: (bills || []) as BillRule[],
-      statements: (statements || []) as CardStatement[]
+      statements: (statements || []) as CardStatement[],
+      transactions: (transactions || []) as CardTransaction[]
     }
   } catch {
-    return { incomes: [], bills: [], statements: [] }
+    return { incomes: [], bills: [], statements: [], transactions: [] }
   }
 }
 
