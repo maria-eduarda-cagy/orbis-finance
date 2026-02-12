@@ -36,7 +36,7 @@ async function handleAction(action: string, id: string, chatId: string) {
     return "Notificação adiada"
   }
   if (action === "open") {
-    return `${APP_URL}/dashboard/month`
+    return `${APP_URL}/monthly`
   }
   return "Ação inválida"
 }
