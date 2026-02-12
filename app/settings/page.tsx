@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button"
 import { Card } from "../../components/ui/card"
 import { Input } from "../../components/ui/input"
 import { BillRule, IncomeRule } from "../../lib/types"
+import { AppHeader } from "../../components/AppHeader"
 
 type NotificationSettings = {
   user_id: string
@@ -140,7 +141,7 @@ export default function SettingsPage() {
 
   return (
     <main className="p-4 space-y-6">
-      <h1 className="text-xl font-semibold">Configurações</h1>
+      <AppHeader title="Configurações" />
 
       <Card>
         <h2 className="text-lg font-semibold">Notificações (Telegram)</h2>

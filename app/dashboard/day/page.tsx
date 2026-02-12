@@ -6,6 +6,7 @@ import { itemsForDay, projectDailyBalances } from "../../../lib/daily"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { IncomeRule, BillRule, CardStatement } from "../../../lib/types"
+import { AppHeader } from "../../../components/AppHeader"
 
 function formatMonth(date: Date) {
   const y = date.getFullYear()
@@ -45,13 +46,10 @@ export default function DailyDashboard() {
 
   return (
     <main className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Dashboard Diário</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => addMonth(-1)}>Mês anterior</Button>
-          <Button onClick={() => addMonth(1)}>Próximo mês</Button>
-          <Button onClick={() => location.href = "/settings"}>Configurações</Button>
-        </div>
+      <AppHeader title={`Dashboard Diário — ${month}`} />
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => addMonth(-1)}>Mês anterior</Button>
+        <Button onClick={() => addMonth(1)}>Próximo mês</Button>
       </div>
 
       {isLoading && <div>Carregando...</div>}
