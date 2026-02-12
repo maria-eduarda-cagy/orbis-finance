@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
+import { Badge } from "../../../components/ui/badge"
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { AppHeader } from "../../../components/AppHeader"
 import { CardTransaction } from "../../../lib/types"
@@ -24,15 +25,31 @@ export default function MonthlyDashboard() {
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["month", month],
-    queryFn: () => fetchMonthData(month)
+    queryFn: () => fetchMonthData(month),
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always"
   })
+
+  const investmentPercentage = useMemo(() => Number((data as { investmentPercentage?: number })?.investmentPercentage || 0), [data])
+  const investmentMonthly = useMemo(() => {
+    const totalIncome = (data?.incomes || []).reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    return (totalIncome * investmentPercentage) / 100
+  }, [data, investmentPercentage])
+
+  const totalBillsOnly = useMemo(() => {
+    const bills = data?.bills || []
+    return bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+  }, [data])
 
   const proj = useMemo(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
-    return computeMonthlyProjection(incomes, bills, statements)
-  }, [data])
+    return computeMonthlyProjection(incomes, bills, statements, 0, investmentMonthly)
+  }, [data, investmentMonthly])
 
   const prevNet = useMemo(() => {
     const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
@@ -94,7 +111,15 @@ export default function MonthlyDashboard() {
     return filteredTransactions.slice(0, 20)
   }, [filteredTransactions, showAll])
 
-  const barColors = ["#0EA5E9", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#14B8A6", "#F97316"]
+  const barColors = [
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
+    "var(--chart-6)",
+    "var(--chart-7)"
+  ]
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -103,45 +128,70 @@ export default function MonthlyDashboard() {
   }
 
   return (
-    <main className="p-4 space-y-4">
+    <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Mensal — ${month}`} />
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => addMonth(-1)}>Mês anterior</Button>
-        <Button onClick={() => addMonth(1)}>Próximo mês</Button>
+        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(-1)}>
+          Mês anterior
+        </Button>
+        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(1)}>
+          Próximo mês
+        </Button>
         <Button onClick={() => refetch()}>Atualizar</Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <Card>
-          <div className="text-sm text-muted-foreground">Receitas</div>
-          <div className="text-2xl font-bold">R$ {proj.totalIncome?.toFixed(2)}</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Receitas</div>
+          <div className="mt-2 text-2xl font-semibold">R$ {proj.totalIncome?.toFixed(2)}</div>
         </Card>
         <Card>
-          <div className="text-sm text-muted-foreground">Despesas Fixas</div>
-          <div className="text-2xl font-bold">R$ {proj.totalBills?.toFixed(2)}</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Despesas Fixas</div>
+          <div className="mt-2 text-2xl font-semibold">R$ {totalBillsOnly.toFixed(2)}</div>
         </Card>
         <Card>
-          <div className="text-sm text-muted-foreground">Cartões</div>
-          <div className="text-2xl font-bold">R$ {proj.totalStatements?.toFixed(2)}</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Investimentos</div>
+          <div className="mt-2 text-2xl font-semibold">R$ {investmentMonthly.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground mt-1">{investmentPercentage}% das receitas</div>
         </Card>
         <Card>
-          <div className="text-sm text-muted-foreground">Saldo Projetado</div>
-          <div className={`text-2xl font-bold ${projWithCarry.net < 0 ? "text-red-600" : "text-green-700"}`}>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Cartões</div>
+          <div className="mt-2 text-2xl font-semibold">R$ {proj.totalStatements?.toFixed(2)}</div>
+        </Card>
+        <Card>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Saldo Projetado</div>
+          <div className={`mt-2 text-2xl font-semibold ${projWithCarry.net < 0 ? "text-danger" : "text-success"}`}>
             R$ {projWithCarry.net?.toFixed(2)}
           </div>
         </Card>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
         <span>Saldo inicial (mês anterior): R$ {prevNet.toFixed(2)}</span>
       </div>
 
-      <Card className="h-72">
-        <div className="text-sm text-foreground px-4 pt-3">Gastos por categoria (R$)</div>
+      <Card className="h-80">
+        <div className="flex items-center justify-between px-4 pt-3">
+          <div>
+            <div className="text-sm text-foreground">Gastos por categoria (R$)</div>
+            <div className="text-xs text-muted-foreground">Clique em uma barra para filtrar.</div>
+          </div>
+          {selectedCategory && (
+            <div className="flex items-center gap-2">
+              <Badge>{selectedCategory}</Badge>
+              <Button
+                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
+                onClick={() => setSelectedCategory(null)}
+              >
+                Limpar
+              </Button>
+            </div>
+          )}
+        </div>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={totalsByCategoryAll}>
             <XAxis dataKey="name" />
@@ -185,14 +235,20 @@ export default function MonthlyDashboard() {
       {isLoading && <div>Carregando...</div>}
 
       <Card>
-        <h2 className="text-lg font-semibold text-foreground">Gastos do Cartão (itens)</h2>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-          <label className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Gastos do Cartão</h2>
+            <p className="text-sm text-muted-foreground">Visualize itens detalhados por categoria.</p>
+          </div>
+          {selectedCategory && <Badge className="text-foreground">{selectedCategory}</Badge>}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
             <input type="checkbox" checked={hideNegative} onChange={(e) => setHideNegative(e.target.checked)} />
             Ocultar valores negativos (pagamentos)
           </label>
           {filteredTransactions.length > 20 && (
-            <Button onClick={() => setShowAll((v) => !v)}>
+            <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => setShowAll((v) => !v)}>
               {showAll ? "Mostrar menos" : "Mostrar todos"}
             </Button>
           )}
@@ -223,15 +279,15 @@ export default function MonthlyDashboard() {
             </div>
           </Card>
         </div>
-        <div className="mt-3 space-y-2 text-sm">
+        <div className="mt-4 space-y-2 text-sm">
           {filteredTransactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
           {visibleTransactions.map((t: CardTransaction) => (
-            <div key={t.id} className="flex flex-col gap-1 border-b pb-2 last:border-b-0">
+            <div key={t.id} className="flex flex-col gap-1 rounded-lg border border-border bg-background-elevated p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-medium">
+                <div className="font-medium text-foreground">
                   {t.cards?.name || "Cartão"} • {t.purchase_date}
                 </div>
-                <div className={`${t.amount_brl < 0 ? "text-green-700" : "text-red-600"} font-semibold`}>
+                <div className={`${t.amount_brl < 0 ? "text-success" : "text-danger"} font-semibold`}>
                   R$ {Number(t.amount_brl).toFixed(2)}
                 </div>
               </div>

@@ -26,7 +26,12 @@ export default function DailyDashboard() {
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
   const { data, isLoading } = useQuery({
     queryKey: ["month", month],
-    queryFn: () => fetchMonthData(month)
+    queryFn: () => fetchMonthData(month),
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always"
   })
 
   const startBalance = useMemo(() => {
@@ -43,13 +48,19 @@ export default function DailyDashboard() {
     return totalIncome - totalBills - totalStatements
   }, [data])
 
+  const investmentPercentage = useMemo(() => Number((data as { investmentPercentage?: number })?.investmentPercentage || 0), [data])
+  const investmentMonthly = useMemo(() => {
+    const totalIncome = (data?.incomes || []).reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    return (totalIncome * investmentPercentage) / 100
+  }, [data, investmentPercentage])
+
   const balances = useMemo<{ date: Date; balance: number; allowance: number }[]>(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
-    const initial = includeCarry ? startBalance : 0
+    const initial = (includeCarry ? startBalance : 0) - investmentMonthly
     return projectDailyBalances(selectedDate, incomes, bills, statements, initial)
-  }, [data, selectedDate, startBalance, includeCarry])
+  }, [data, selectedDate, startBalance, includeCarry, investmentMonthly])
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -61,16 +72,20 @@ export default function DailyDashboard() {
   const days = Array.from({ length: totalDays }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1))
 
   return (
-    <main className="p-4 space-y-4">
+    <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Diário — ${month}`} />
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => addMonth(-1)}>Mês anterior</Button>
-        <Button onClick={() => addMonth(1)}>Próximo mês</Button>
+        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(-1)}>
+          Mês anterior
+        </Button>
+        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(1)}>
+          Próximo mês
+        </Button>
       </div>
 
       {isLoading && <div>Carregando...</div>}
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
@@ -85,15 +100,15 @@ export default function DailyDashboard() {
             <Card key={d.toISOString()}>
               <div className="flex items-center justify-between">
                 <div className="font-medium">{d.toLocaleDateString("pt-BR")}</div>
-                <div className={`${(bal?.balance || 0) < 0 ? "text-red-600" : "text-green-700"} font-semibold`}>
+                <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold`}>
                   R$ {(bal?.balance || 0).toFixed(2)}
                 </div>
               </div>
-              <div className="mt-2 text-sm">
+              <div className="mt-2 text-sm text-muted-foreground space-y-1">
                 <div>Receitas: R$ {items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0).toFixed(2)}</div>
                 <div>Despesas: R$ {items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0).toFixed(2)}</div>
                 <div>Cartões: R$ {items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0).toFixed(2)}</div>
-                <div className="mt-2">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
+                <div className="pt-2 text-foreground font-medium">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
               </div>
             </Card>
           )
