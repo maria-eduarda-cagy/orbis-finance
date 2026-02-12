@@ -66,7 +66,7 @@ export default function DailyDashboard() {
       </div>
 
       {isLoading && <div>Carregando...</div>}
-      <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior

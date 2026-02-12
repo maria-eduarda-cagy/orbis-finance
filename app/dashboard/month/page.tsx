@@ -97,26 +97,26 @@ export default function MonthlyDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Card>
-          <div className="text-sm text-neutral-500">Receitas</div>
+          <div className="text-sm text-muted-foreground">Receitas</div>
           <div className="text-2xl font-bold">R$ {proj.totalIncome?.toFixed(2)}</div>
         </Card>
         <Card>
-          <div className="text-sm text-neutral-500">Despesas Fixas</div>
+          <div className="text-sm text-muted-foreground">Despesas Fixas</div>
           <div className="text-2xl font-bold">R$ {proj.totalBills?.toFixed(2)}</div>
         </Card>
         <Card>
-          <div className="text-sm text-neutral-500">Cartões</div>
+          <div className="text-sm text-muted-foreground">Cartões</div>
           <div className="text-2xl font-bold">R$ {proj.totalStatements?.toFixed(2)}</div>
         </Card>
         <Card>
-          <div className="text-sm text-neutral-500">Saldo Projetado</div>
+          <div className="text-sm text-muted-foreground">Saldo Projetado</div>
           <div className={`text-2xl font-bold ${projWithCarry.net < 0 ? "text-red-600" : "text-green-700"}`}>
             R$ {projWithCarry.net?.toFixed(2)}
           </div>
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
@@ -125,12 +125,22 @@ export default function MonthlyDashboard() {
       </div>
 
       <Card className="h-72">
-        <div className="text-sm text-neutral-100 px-4 pt-3">Gastos por categoria</div>
+        <div className="text-sm text-foreground px-4 pt-3">Gastos por categoria (R$)</div>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={totalsByCategory}>
             <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
+            <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} />
+            <Tooltip
+              formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
+              contentStyle={{
+                background: "var(--background-elevated)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+                borderRadius: 8
+              }}
+              labelStyle={{ color: "var(--muted-foreground)" }}
+              itemStyle={{ color: "var(--foreground)" }}
+            />
             <Bar dataKey="total" fill="#6E72FC" stroke="#4F52CC" />
           </BarChart>
         </ResponsiveContainer>
@@ -139,7 +149,7 @@ export default function MonthlyDashboard() {
       {isLoading && <div>Carregando...</div>}
 
       <Card>
-        <h2 className="text-lg font-semibold text-neutral-100">Gastos do Cartão (itens)</h2>
+        <h2 className="text-lg font-semibold text-foreground">Gastos do Cartão (itens)</h2>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={hideNegative} onChange={(e) => setHideNegative(e.target.checked)} />
@@ -153,9 +163,9 @@ export default function MonthlyDashboard() {
         </div>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <Card>
-            <div className="font-medium text-neutral-100">Total por cartão</div>
+            <div className="font-medium text-foreground">Total por cartão</div>
             <div className="mt-2 space-y-1">
-              {totalsByCard.length === 0 && <div className="text-neutral-600">Sem dados.</div>}
+              {totalsByCard.length === 0 && <div className="text-muted-foreground">Sem dados.</div>}
               {totalsByCard.map((t) => (
                 <div key={t.name} className="flex items-center justify-between">
                   <span>{t.name}</span>
@@ -165,9 +175,9 @@ export default function MonthlyDashboard() {
             </div>
           </Card>
           <Card>
-            <div className="font-medium text-neutral-100">Total por categoria</div>
+            <div className="font-medium text-foreground">Total por categoria</div>
             <div className="mt-2 space-y-1">
-              {totalsByCategory.length === 0 && <div className="text-neutral-600">Sem dados.</div>}
+              {totalsByCategory.length === 0 && <div className="text-muted-foreground">Sem dados.</div>}
               {totalsByCategory.map((t) => (
                 <div key={t.name} className="flex items-center justify-between">
                   <span>{t.name}</span>
@@ -178,7 +188,7 @@ export default function MonthlyDashboard() {
           </Card>
         </div>
         <div className="mt-3 space-y-2 text-sm">
-          {transactions.length === 0 && <div className="text-neutral-600">Sem lançamentos.</div>}
+          {transactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
           {visibleTransactions.map((t: CardTransaction) => (
             <div key={t.id} className="flex flex-col gap-1 border-b pb-2 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -189,8 +199,8 @@ export default function MonthlyDashboard() {
                   R$ {Number(t.amount_brl).toFixed(2)}
                 </div>
               </div>
-              <div className="text-neutral-700">{t.description || "-"}</div>
-              <div className="text-neutral-500">
+              <div className="text-secondary-foreground">{t.description || "-"}</div>
+              <div className="text-muted-foreground">
                 {t.category || "-"} {t.installment ? `• ${t.installment}` : ""}
               </div>
             </div>
