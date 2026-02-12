@@ -51,3 +51,9 @@ export type CardTransaction = {
   amount_brl: number
   cards?: { name: string }
 }
+
+export type InvestmentSettings = {
+  user_id: string
+  monthly_amount: number
+  monthly_percentage: number
+}

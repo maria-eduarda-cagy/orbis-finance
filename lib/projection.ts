@@ -38,6 +38,10 @@ export async function fetchMonthData(month: string) {
       .from("card_transactions")
       .select("amount_brl")
       .eq("statement_month", prevMonthStr)
+    const { data: investmentSettings } = await supabase
+      .from("user_investment_settings")
+      .select("monthly_percentage")
+      .single()
     return {
       incomes: (incomes || []) as IncomeRule[],
       bills: (bills || []) as BillRule[],
@@ -45,10 +49,11 @@ export async function fetchMonthData(month: string) {
       transactions: (transactions || []) as CardTransaction[],
       prevStatements: (prevStatements || []) as CardStatement[],
       prevTransactions: (prevTransactions || []) as { amount_brl: number }[],
-      userCreatedAt: createdAt
+      userCreatedAt: createdAt,
+      investmentPercentage: Number(investmentSettings?.monthly_percentage || 0)
     }
   } catch {
-    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], userCreatedAt: null }
+    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], userCreatedAt: null, investmentPercentage: 0 }
   }
 }
 
