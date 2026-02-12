@@ -21,9 +21,15 @@ export function itemsForDay(date: Date, incomes: IncomeRule[], bills: BillRule[]
   return { incs, bls, sts, netDelta }
 }
 
-export function projectDailyBalances(selectedDate: Date, incomes: IncomeRule[], bills: BillRule[], statements: CardStatement[]) {
+export function projectDailyBalances(
+  selectedDate: Date,
+  incomes: IncomeRule[],
+  bills: BillRule[],
+  statements: CardStatement[],
+  startBalance = 0
+) {
   const days = buildMonthDays(selectedDate)
-  let balance = 0
+  let balance = startBalance
   const result = days.map((d) => {
     const { netDelta } = itemsForDay(d, incomes, bills, statements)
     balance += netDelta
