@@ -4,6 +4,8 @@ import { BillRule, CardStatement, IncomeRule, CardTransaction } from "./types"
 export async function fetchMonthData(month: string) {
   try {
     const supabase = getSupabase()
+    const { data: auth } = await supabase.auth.getUser()
+    const createdAt = auth.user?.created_at || null
     const [yStr, mStr] = month.split("-")
     const y = Number(yStr)
     const m = Number(mStr)
@@ -42,10 +44,11 @@ export async function fetchMonthData(month: string) {
       statements: (statements || []) as CardStatement[],
       transactions: (transactions || []) as CardTransaction[],
       prevStatements: (prevStatements || []) as CardStatement[],
-      prevTransactions: (prevTransactions || []) as { amount_brl: number }[]
+      prevTransactions: (prevTransactions || []) as { amount_brl: number }[],
+      userCreatedAt: createdAt
     }
   } catch {
-    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [] }
+    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], userCreatedAt: null }
   }
 }
 
