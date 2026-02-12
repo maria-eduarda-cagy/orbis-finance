@@ -3,9 +3,10 @@ import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchMonthData } from "../../../lib/projection"
 import { itemsForDay, projectDailyBalances } from "../../../lib/daily"
+import { buildVariableExpenseMap } from "../../../lib/variableExpenses"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
-import { IncomeRule, BillRule, CardStatement } from "../../../lib/types"
+import { IncomeRule, BillRule, CardStatement, VariableExpense } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
 
 function formatMonth(date: Date) {
@@ -46,7 +47,7 @@ export default function DailyDashboard() {
     const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
     const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
     return totalIncome - totalBills - totalStatements
-  }, [data])
+  }, [data, month])
 
   const investmentPercentage = useMemo(() => Number((data as { investmentPercentage?: number })?.investmentPercentage || 0), [data])
   const investmentMonthly = useMemo(() => {
@@ -54,13 +55,18 @@ export default function DailyDashboard() {
     return (totalIncome * investmentPercentage) / 100
   }, [data, investmentPercentage])
 
+  const variableExpenseMap = useMemo(() => {
+    const list = ((data as { variableExpenses?: VariableExpense[] })?.variableExpenses || []) as VariableExpense[]
+    return buildVariableExpenseMap(list, month)
+  }, [data, month])
+
   const balances = useMemo<{ date: Date; balance: number; allowance: number }[]>(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
     const initial = (includeCarry ? startBalance : 0) - investmentMonthly
-    return projectDailyBalances(selectedDate, incomes, bills, statements, initial)
-  }, [data, selectedDate, startBalance, includeCarry, investmentMonthly])
+    return projectDailyBalances(selectedDate, incomes, bills, statements, variableExpenseMap, initial)
+  }, [data, selectedDate, startBalance, includeCarry, investmentMonthly, variableExpenseMap])
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -94,7 +100,7 @@ export default function DailyDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {days.map((d) => {
-          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [])
+          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], variableExpenseMap)
           const bal = balances.find((b: { date: Date; balance: number; allowance: number }) => b.date.toDateString() === d.toDateString())
           return (
           <Card key={d.toISOString()} className="p-3">

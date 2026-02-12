@@ -7,7 +7,8 @@ import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { AppHeader } from "../../../components/AppHeader"
-import { CardTransaction } from "../../../lib/types"
+import { CardTransaction, VariableExpense } from "../../../lib/types"
+import { totalVariableExpensesForMonth } from "../../../lib/variableExpenses"
 
 function formatMonth(date: Date) {
   const y = date.getFullYear()
@@ -44,12 +45,17 @@ export default function MonthlyDashboard() {
     return bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
   }, [data])
 
+  const variableExpensesTotal = useMemo(() => {
+    const list = ((data as { variableExpenses?: VariableExpense[] })?.variableExpenses || []) as VariableExpense[]
+    return totalVariableExpensesForMonth(list, month)
+  }, [data, month])
+
   const proj = useMemo(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
-    return computeMonthlyProjection(incomes, bills, statements, 0, investmentMonthly)
-  }, [data, investmentMonthly])
+    return computeMonthlyProjection(incomes, bills, statements, 0, investmentMonthly + variableExpensesTotal)
+  }, [data, investmentMonthly, variableExpensesTotal])
 
   const prevNet = useMemo(() => {
     const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
@@ -63,7 +69,7 @@ export default function MonthlyDashboard() {
     const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
     const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
     return totalIncome - totalBills - totalStatements
-  }, [data])
+  }, [data, month])
 
   const projWithCarry = useMemo(() => {
     if (!includeCarry) return proj
@@ -174,29 +180,36 @@ export default function MonthlyDashboard() {
         <span>Saldo inicial (mês anterior): R$ {prevNet.toFixed(2)}</span>
       </div>
 
-      <Card className="h-80">
-        <div className="flex items-center justify-between px-4 pt-3">
+      <div>
+        <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-foreground">Gastos por categoria (R$)</div>
+            <div className="text-sm text-foreground font-semibold">Gastos por categoria</div>
             <div className="text-xs text-muted-foreground">Clique em uma barra para filtrar.</div>
           </div>
-          {selectedCategory && (
-            <div className="flex items-center gap-2">
-              <Badge>{selectedCategory}</Badge>
-              <Button
-                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-                onClick={() => setSelectedCategory(null)}
-              >
-                Limpar
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-14 rounded-full bg-[var(--chart-1)]" />
+            <span className="h-1.5 w-10 rounded-full bg-[var(--chart-2)]" />
+            <span className="h-1.5 w-12 rounded-full bg-[var(--chart-4)]" />
+          </div>
         </div>
+      </div>
+
+      <Card className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={totalsByCategoryAll}>
-            <XAxis dataKey="name" />
-            <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} />
+          <BarChart
+            data={totalsByCategoryAll}
+            barCategoryGap={22}
+            onClick={(e) => {
+              const payload = (e as { activePayload?: Array<{ payload?: { name?: string } }> })?.activePayload?.[0]?.payload
+              const name = payload?.name
+              if (!name) return
+              setSelectedCategory((current) => (current === name ? null : name))
+            }}
+          >
+            <XAxis dataKey="name" axisLine={false} tickLine={false} />
+            <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} axisLine={false} tickLine={false} />
             <Tooltip
+              cursor={{ fill: "rgba(79,124,255,0.08)" }}
               formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
               contentStyle={{
                 background: "var(--background-elevated)",
@@ -210,11 +223,7 @@ export default function MonthlyDashboard() {
             <Bar
               dataKey="total"
               activeBar={{ fillOpacity: 0.4 }}
-              onClick={(data) => {
-                const name = data?.name as string | undefined
-                if (!name) return
-                setSelectedCategory((current) => (current === name ? null : name))
-              }}
+              radius={[10, 10, 6, 6]}
             >
               {totalsByCategoryAll.map((item, index) => {
                 const isSelected = selectedCategory ? item.name === selectedCategory : true
@@ -231,6 +240,18 @@ export default function MonthlyDashboard() {
           </BarChart>
         </ResponsiveContainer>
       </Card>
+
+      {selectedCategory && (
+        <div className="flex items-center gap-2">
+          <Badge>{selectedCategory}</Badge>
+          <Button
+            className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
+            onClick={() => setSelectedCategory(null)}
+          >
+            Limpar filtro
+          </Button>
+        </div>
+      )}
 
       {isLoading && <div>Carregando...</div>}
 
