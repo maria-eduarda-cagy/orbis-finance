@@ -18,6 +18,7 @@ export default function MonthlyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [hideNegative, setHideNegative] = useState(true)
   const [showAll, setShowAll] = useState(false)
+  const [includeCarry, setIncludeCarry] = useState(true)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
 
   const { data, refetch, isLoading } = useQuery({
@@ -31,6 +32,25 @@ export default function MonthlyDashboard() {
     const statements = data?.statements || []
     return computeMonthlyProjection(incomes, bills, statements)
   }, [data])
+
+  const prevNet = useMemo(() => {
+    const incomes = data?.incomes || []
+    const bills = data?.bills || []
+    const prevStatements = data?.prevStatements || []
+    const prevTransactions = (data?.prevTransactions || []).reduce((s: number, r: { amount_brl: number }) => s + Number(r.amount_brl || 0), 0)
+    const totalIncome = incomes.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
+    return totalIncome - totalBills - totalStatements
+  }, [data])
+
+  const projWithCarry = useMemo(() => {
+    if (!includeCarry) return proj
+    return {
+      ...proj,
+      net: proj.net + prevNet
+    }
+  }, [proj, prevNet, includeCarry])
 
   const transactions = useMemo(() => {
     const list = (data?.transactions || []) as CardTransaction[]
@@ -90,10 +110,18 @@ export default function MonthlyDashboard() {
         </Card>
         <Card>
           <div className="text-sm text-neutral-500">Saldo Projetado</div>
-          <div className={`text-2xl font-bold ${proj.net < 0 ? "text-red-600" : "text-green-700"}`}>
-            R$ {proj.net?.toFixed(2)}
+          <div className={`text-2xl font-bold ${projWithCarry.net < 0 ? "text-red-600" : "text-green-700"}`}>
+            R$ {projWithCarry.net?.toFixed(2)}
           </div>
         </Card>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
+          Incluir saldo do mês anterior
+        </label>
+        <span>Saldo inicial (mês anterior): R$ {prevNet.toFixed(2)}</span>
       </div>
 
       <Card className="h-72">

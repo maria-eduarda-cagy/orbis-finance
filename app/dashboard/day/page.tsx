@@ -22,18 +22,31 @@ function daysInMonth(date: Date) {
 
 export default function DailyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [includeCarry, setIncludeCarry] = useState(true)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
   const { data, isLoading } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month)
   })
 
+  const startBalance = useMemo(() => {
+    const incomes = data?.incomes || []
+    const bills = data?.bills || []
+    const prevStatements = data?.prevStatements || []
+    const prevTransactions = (data?.prevTransactions || []).reduce((s: number, r: { amount_brl: number }) => s + Number(r.amount_brl || 0), 0)
+    const totalIncome = incomes.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
+    const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
+    return totalIncome - totalBills - totalStatements
+  }, [data])
+
   const balances = useMemo<{ date: Date; balance: number; allowance: number }[]>(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
-    return projectDailyBalances(selectedDate, incomes, bills, statements)
-  }, [data, selectedDate])
+    const initial = includeCarry ? startBalance : 0
+    return projectDailyBalances(selectedDate, incomes, bills, statements, initial)
+  }, [data, selectedDate, startBalance, includeCarry])
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -53,6 +66,13 @@ export default function DailyDashboard() {
       </div>
 
       {isLoading && <div>Carregando...</div>}
+      <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
+          Incluir saldo do mês anterior
+        </label>
+        <span>Saldo inicial (mês anterior): R$ {startBalance.toFixed(2)}</span>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {days.map((d) => {
