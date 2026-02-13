@@ -46,7 +46,7 @@ export default function DailyDashboard() {
     const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
     const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
     return totalIncome - totalBills - totalStatements
-  }, [data])
+  }, [data, month])
 
   const investmentPercentage = useMemo(() => Number((data as { investmentPercentage?: number })?.investmentPercentage || 0), [data])
   const investmentMonthly = useMemo(() => {
