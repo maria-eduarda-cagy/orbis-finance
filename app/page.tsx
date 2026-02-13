@@ -88,11 +88,19 @@ export default function HomePage() {
 
       <section className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="h-48">
-            <div className="h-full flex items-center justify-center text-muted-foreground">Preview Dashboard Mensal</div>
+          <Card className="h-48 overflow-hidden">
+            <img
+              src="/preview-monthly.svg"
+              alt="Preview do Dashboard Mensal"
+              className="w-full h-full object-cover"
+            />
           </Card>
-          <Card className="h-48">
-            <div className="h-full flex items-center justify-center text-muted-foreground">Preview Dashboard Diário</div>
+          <Card className="h-48 overflow-hidden">
+            <img
+              src="/preview-daily.svg"
+              alt="Preview do Dashboard Diário"
+              className="w-full h-full object-cover"
+            />
           </Card>
         </div>
       </section>
