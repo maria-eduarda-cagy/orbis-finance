@@ -77,4 +77,5 @@ export type BankTransfer = {
   transfer_month: string
   direction: "entrada" | "saida"
   bank_name: string | null
+  category: string | null
 }
