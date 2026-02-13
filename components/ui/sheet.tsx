@@ -34,8 +34,8 @@ export const SheetContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={clsx(
-          "fixed z-50 h-full w-80 max-w-[85vw] border border-border bg-background-elevated p-6 shadow-card outline-none",
-          side === "left" ? "inset-y-0 left-0" : "inset-y-0 right-0",
+          "fixed z-50 h-full w-80 max-w-[85vw] bg-background-elevated p-6 shadow-[0_8px_18px_rgba(6,10,18,0.18)] outline-none",
+          side === "left" ? "inset-y-0 left-0 rounded-r-2xl" : "inset-y-0 right-0 rounded-l-2xl",
           className
         )}
         {...props}

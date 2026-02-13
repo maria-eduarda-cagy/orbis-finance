@@ -6,7 +6,45 @@ html, body, :root {
   height: 100%;
 }
 
-:root,
+:root {
+  color-scheme: light;
+  --background: #F4F6FB;
+  --background-elevated: #FFFFFF;
+  --background-subtle: #EEF2F8;
+  --foreground: #0B0F14;
+  --muted: #E6ECF5;
+  --muted-foreground: #52627A;
+  --card: #FFFFFF;
+  --card-foreground: #0B0F14;
+  --border: #D7DEE8;
+  --input: #FFFFFF;
+  --ring: #4F7CFF;
+  --primary: #3C6BFF;
+  --primary-foreground: #F8FAFF;
+  --secondary: #EAF0FF;
+  --secondary-foreground: #1F2A3D;
+  --accent: #7E6BFF;
+  --accent-foreground: #FFFFFF;
+  --success: #18A874;
+  --success-foreground: #F1FFFA;
+  --warning: #E6A83C;
+  --warning-foreground: #2B1A05;
+  --danger: #E05656;
+  --danger-foreground: #2A1010;
+  --info: #2B8CFF;
+  --info-foreground: #061526;
+  --chart-1: #3C6BFF;
+  --chart-2: #11B89C;
+  --chart-3: #E6A83C;
+  --chart-4: #7E6BFF;
+  --chart-5: #E05656;
+  --chart-6: #42B8FF;
+  --chart-7: #6CD7A4;
+  --bg-gradient-1: rgba(79,124,255,0.12);
+  --bg-gradient-2: rgba(155,123,255,0.08);
+  --bg-gradient-3: rgba(25,195,166,0.06);
+}
+
 .dark {
   color-scheme: dark;
   --background: #0B0F14;
@@ -41,6 +79,9 @@ html, body, :root {
   --chart-5: #F26B6B;
   --chart-6: #5AD1FF;
   --chart-7: #7EE7B0;
+  --bg-gradient-1: rgba(79,124,255,0.16);
+  --bg-gradient-2: rgba(155,123,255,0.12);
+  --bg-gradient-3: rgba(25,195,166,0.08);
 }
 
 body {
@@ -48,9 +89,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   background-image:
-    radial-gradient(1200px 600px at 15% -100px, rgba(79,124,255,0.16), transparent 60%),
-    radial-gradient(900px 500px at 85% -120px, rgba(155,123,255,0.12), transparent 60%),
-    radial-gradient(700px 400px at 50% 120%, rgba(25,195,166,0.08), transparent 70%);
+    radial-gradient(1200px 600px at 15% -100px, var(--bg-gradient-1), transparent 60%),
+    radial-gradient(900px 500px at 85% -120px, var(--bg-gradient-2), transparent 60%),
+    radial-gradient(700px 400px at 50% 120%, var(--bg-gradient-3), transparent 70%);
   font-variant-numeric: tabular-nums;
 }
 

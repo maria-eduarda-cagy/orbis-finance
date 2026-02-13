@@ -101,9 +101,6 @@ export default function ImportPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [batches, setBatches] = useState<ImportBatch[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [cleanupMonth, setCleanupMonth] = useState<string>("")
-  const [cleanupBank, setCleanupBank] = useState<string>("")
-  const [cleanupLoading, setCleanupLoading] = useState(false)
   const effectiveBank = bankName.trim()
 
   useEffect(() => {
@@ -267,57 +264,7 @@ export default function ImportPage() {
     queryClient.invalidateQueries({ queryKey: ["month"] })
   }
 
-  async function resolveCardIdsByBank(bank: string) {
-    const supabase = getSupabase()
-    const { data } = await supabase
-      .from("cards")
-      .select("id,name")
-      .or(`name.ilike.${bank}%,name.ilike.%${bank}%`)
-    return (data || []).map((c: { id: string }) => c.id)
-  }
-
-  async function cleanupByMonth({ onlyOrphans }: { onlyOrphans: boolean }) {
-    setMessage(null)
-    if (!cleanupMonth) {
-      setMessage("Selecione o mês para limpeza.")
-      return
-    }
-    if (!cleanupBank) {
-      setMessage("Selecione o banco para limpeza.")
-      return
-    }
-    setCleanupLoading(true)
-    const supabase = getSupabase()
-    const cardIds = await resolveCardIdsByBank(cleanupBank)
-    if (cardIds.length === 0) {
-      setCleanupLoading(false)
-      setMessage("Nenhum cartão encontrado para esse banco.")
-      return
-    }
-
-    let txDelete = supabase
-      .from("card_transactions")
-      .delete()
-      .eq("statement_month", cleanupMonth)
-      .in("card_id", cardIds)
-    let stDelete = supabase
-      .from("card_statements")
-      .delete()
-      .eq("statement_month", cleanupMonth)
-      .in("card_id", cardIds)
-
-    if (onlyOrphans) {
-      txDelete = txDelete.is("import_batch_id", null)
-      stDelete = stDelete.is("import_batch_id", null)
-    }
-
-    await txDelete
-    await stDelete
-
-    setCleanupLoading(false)
-    setMessage("Limpeza concluída.")
-    queryClient.invalidateQueries({ queryKey: ["month"] })
-  }
+  // cleanup-by-month removed per request
 
   return (
     <main className="relative min-h-screen">
@@ -337,7 +284,7 @@ export default function ImportPage() {
                       onClick={() => setBankName(option)}
                       className={active
                         ? "rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm"
-                        : "rounded-full border border-border bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
+                        : "rounded-full  bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
                     >
                       {option}
                     </button>
@@ -347,22 +294,35 @@ export default function ImportPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">Arquivo CSV</label>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={handleFile}
-                className="text-sm"
-                disabled={!bankName}
-              />
+              <div className="flex flex-wrap items-center gap-3">
+                <label className={`inline-flex items-center gap-2 rounded-full bg-background-elevated px-0 py-2 text-sm font-semibold transition-colors ${bankName ? "cursor-pointer hover:bg-background-subtle" : "cursor-not-allowed opacity-60"}`}>
+                  Escolher arquivo
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleFile}
+                    className="hidden"
+                    disabled={!bankName}
+                  />
+                </label>
+                <span className="text-xs text-muted-foreground">
+                  {fileName || "Nenhum arquivo selecionado"}
+                </span>
+              </div>
             </div>
-            <div>
+            <div className="space-y-2">
               <label className="text-sm text-muted-foreground">Mês da fatura</label>
-              <Input
-                type="month"
-                value={statementMonth}
-                onChange={(e) => setStatementMonth(e.target.value)}
-                placeholder="YYYY-MM"
-              />
+              <div className="flex flex-wrap items-start justify-start">
+                <div className="inline-flex items-start justify-start rounded-full bg-background-elevated px-3 py-2 text-left text-sm font-semibold">
+                  {statementMonth || ""}
+                </div>
+                <input
+                  type="month"
+                  value={statementMonth}
+                  onChange={(e) => setStatementMonth(e.target.value)}
+                  className="rounded-full bg-background-subtle text-foreground px-3.5 py-2 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                />
+              </div>
             </div>
             {rows.length > 0 && (
               <div className="pt-2">
@@ -376,7 +336,7 @@ export default function ImportPage() {
             {message && <div className="text-success text-sm">{message}</div>}
           </div>
 
-          <div className="mt-8 border-t border-border pt-5">
+          <div className="mt-8  pt-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold">Imports realizados</h3>
@@ -386,13 +346,13 @@ export default function ImportPage() {
             <div className="mt-4 space-y-3">
               {batches.length === 0 && <div className="text-sm text-muted-foreground">Nenhum import encontrado.</div>}
               {batches.map((b) => (
-                <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background-elevated p-3">
+                <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg  bg-background-elevated p-3">
                   <div className="text-sm">
                     <div className="font-medium">{b.bank} • {b.statement_month}</div>
                     <div className="text-muted-foreground">Vencimento: {b.due_date} • Arquivo: {b.file_name}</div>
                   </div>
                   <Button
-                    className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
+                    className="bg-secondary text-secondary-foreground  hover:brightness-110"
                     onClick={() => deleteBatch(b)}
                     disabled={deleteId === b.id}
                   >
@@ -403,54 +363,7 @@ export default function ImportPage() {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-border pt-5">
-            <div>
-              <h3 className="text-base font-semibold">Remover lançamentos por mês</h3>
-              <p className="text-sm text-muted-foreground">Use para limpar dados antigos direto do banco.</p>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-sm text-muted-foreground">Banco</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {bankOptions.map((option) => {
-                    const active = cleanupBank === option
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setCleanupBank(option)}
-                        className={active
-                          ? "rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm"
-                          : "rounded-full border border-border bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
-                      >
-                        {option}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Mês</label>
-                <Input type="month" value={cleanupMonth} onChange={(e) => setCleanupMonth(e.target.value)} />
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-                onClick={() => cleanupByMonth({ onlyOrphans: false })}
-                disabled={cleanupLoading}
-              >
-                {cleanupLoading ? "Limpando..." : "Remover tudo do mês"}
-              </Button>
-              <Button
-                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-                onClick={() => cleanupByMonth({ onlyOrphans: true })}
-                disabled={cleanupLoading}
-              >
-                {cleanupLoading ? "Limpando..." : "Limpeza retroativa (sem import)"}
-              </Button>
-            </div>
-          </div>
+          
         </Card>
       </div>
 
@@ -462,13 +375,13 @@ export default function ImportPage() {
         </div>
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => router.back()} />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl">
+          <Card className="w-full max-w-2xl max-h-[calc(100vh-30px)] overflow-y-auto">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">Importar faturas CSV</h2>
               <p className="text-sm text-muted-foreground">Selecione o arquivo e o mês/ano da fatura.</p>
             </div>
-            <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => router.back()}>
+            <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => router.back()}>
               Fechar
             </Button>
           </div>
@@ -485,7 +398,7 @@ export default function ImportPage() {
                       onClick={() => setBankName(option)}
                       className={active
                         ? "rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm"
-                        : "rounded-full border border-border bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
+                        : "rounded-full  bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
                     >
                       {option}
                     </button>
@@ -495,22 +408,36 @@ export default function ImportPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">Arquivo CSV</label>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={handleFile}
-                className="text-sm"
-                disabled={!bankName}
-              />
+              <div className="flex flex-wrap items-center gap-3">
+                <label className={`inline-flex items-center gap-2 rounded-full bg-background-elevated px-0 py-2 text-sm font-semibold transition-colors ${bankName ? "cursor-pointer hover:bg-background-subtle" : "cursor-not-allowed opacity-60"}`}>
+                  Escolher arquivo
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleFile}
+                    className="hidden"
+                    disabled={!bankName}
+                  />
+                </label>
+                <span className="text-xs text-muted-foreground">
+                  {fileName || "Nenhum arquivo selecionado"}
+                </span>
+              </div>
             </div>
-            <div>
+            <div className="space-y-2">
               <label className="text-sm text-muted-foreground">Mês da fatura</label>
-              <Input
-                type="month"
-                value={statementMonth}
-                onChange={(e) => setStatementMonth(e.target.value)}
-                placeholder="YYYY-MM"
-              />
+              <div className="flex flex-wrap items-center justify-start gap-3">
+               
+                <input
+                  type="month"
+                  value={statementMonth}
+                  onChange={(e) => setStatementMonth(e.target.value)}
+                  className="rounded-full bg-background-subtle text-foreground px-3.5 py-2 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                />
+                 <div className="inline-flex items-center justify-start rounded-full bg-background-elevated px-3 py-2 text-left text-sm font-semibold">
+                  {statementMonth || ""}
+                </div>
+              </div>
             </div>
             {rows.length > 0 && (
               <div className="pt-2">
@@ -524,7 +451,7 @@ export default function ImportPage() {
             {message && <div className="text-success text-sm">{message}</div>}
           </div>
 
-          <div className="mt-8 border-t border-border pt-5">
+          <div className="mt-2  pt-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold">Imports realizados</h3>
@@ -534,13 +461,13 @@ export default function ImportPage() {
             <div className="mt-4 space-y-3">
               {batches.length === 0 && <div className="text-sm text-muted-foreground">Nenhum import encontrado.</div>}
               {batches.map((b) => (
-                <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background-elevated p-3">
+                <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg  bg-background-elevated p-3">
                   <div className="text-sm">
                     <div className="font-medium">{b.bank} • {b.statement_month}</div>
                     <div className="text-muted-foreground">Vencimento: {b.due_date} • Arquivo: {b.file_name}</div>
                   </div>
                   <Button
-                    className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
+                    className="bg-secondary text-secondary-foreground  hover:brightness-110"
                     onClick={() => deleteBatch(b)}
                     disabled={deleteId === b.id}
                   >
@@ -551,54 +478,7 @@ export default function ImportPage() {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-border pt-5">
-            <div>
-              <h3 className="text-base font-semibold">Remover lançamentos por mês</h3>
-              <p className="text-sm text-muted-foreground">Use para limpar dados antigos direto do banco.</p>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-sm text-muted-foreground">Banco</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {bankOptions.map((option) => {
-                    const active = cleanupBank === option
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setCleanupBank(option)}
-                        className={active
-                          ? "rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm"
-                          : "rounded-full border border-border bg-background-elevated text-muted-foreground px-3 py-1.5 text-sm hover:bg-background-subtle"}
-                      >
-                        {option}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Mês</label>
-                <Input type="month" value={cleanupMonth} onChange={(e) => setCleanupMonth(e.target.value)} />
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-                onClick={() => cleanupByMonth({ onlyOrphans: false })}
-                disabled={cleanupLoading}
-              >
-                {cleanupLoading ? "Limpando..." : "Remover tudo do mês"}
-              </Button>
-              <Button
-                className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-                onClick={() => cleanupByMonth({ onlyOrphans: true })}
-                disabled={cleanupLoading}
-              >
-                {cleanupLoading ? "Limpando..." : "Limpeza retroativa (sem import)"}
-              </Button>
-            </div>
-          </div>
+          
           </Card>
         </div>
       </div>

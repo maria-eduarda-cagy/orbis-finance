@@ -2,7 +2,7 @@
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-border text-muted-foreground text-sm">
+    <footer className="w-full text-muted-foreground text-sm">
       <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <span>© {new Date().getFullYear()} Orbis Finance</span>
         <div className="flex flex-wrap items-center gap-4">

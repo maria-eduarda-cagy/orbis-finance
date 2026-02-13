@@ -7,6 +7,18 @@ import { Badge } from "../components/ui/badge"
 export default function HomePage() {
   return (
     <main className="px-4 py-10 sm:py-16 space-y-16">
+      <header className="max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-lg font-semibold tracking-tight">Orbis Finance</div>
+        <div className="flex items-center gap-3">
+          <Link href="/login">
+            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
+          </Link>
+          <Link href="/register">
+            <Button className="glow">Começar agora</Button>
+          </Link>
+        </div>
+      </header>
+
       <section className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
         <div className="space-y-5">
           <Badge>Controle diário inteligente</Badge>
@@ -21,7 +33,7 @@ export default function HomePage() {
               <Button className="glow">Começar agora</Button>
             </Link>
             <Link href="/login">
-              <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110">Entrar</Button>
+              <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
             </Link>
           </div>
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -37,16 +49,16 @@ export default function HomePage() {
           </div>
           <div className="text-3xl font-semibold">R$ 5.423,80</div>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg border border-border bg-background-elevated p-3">
+            <div className="rounded-lg bg-background-elevated p-3 shadow-[0_5px_12px_rgba(6,10,18,0.14)]">
               <div className="text-muted-foreground">Receitas</div>
               <div className="font-semibold">R$ 9.120,00</div>
             </div>
-            <div className="rounded-lg border border-border bg-background-elevated p-3">
+            <div className="rounded-lg bg-background-elevated p-3 shadow-[0_5px_12px_rgba(6,10,18,0.14)]">
               <div className="text-muted-foreground">Despesas</div>
               <div className="font-semibold">R$ 3.696,20</div>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-background-subtle p-3 text-sm text-muted-foreground">
+          <div className="rounded-lg bg-background-subtle p-3 text-sm text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
             Alertas de vencimento e status em tempo real.
           </div>
         </Card>
@@ -112,12 +124,12 @@ export default function HomePage() {
             <Button className="glow">Começar agora</Button>
           </Link>
           <Link href="/login">
-            <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110">Entrar</Button>
+            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
           </Link>
         </div>
       </section>
 
-      <footer className="max-w-5xl mx-auto pt-8 border-t border-border text-muted-foreground text-sm flex items-center justify-between">
+      <footer className="max-w-5xl mx-auto pt-8 text-muted-foreground text-sm flex items-center justify-between">
         <span>© {new Date().getFullYear()} Orbis Finance</span>
         <div className="flex gap-3">
           <Link href="/monthly">Dashboard</Link>

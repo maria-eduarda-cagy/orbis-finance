@@ -1,4 +1,4 @@
-import { BillRule, CardStatement, IncomeRule } from "./types"
+import { BankTransfer, BillRule, CardStatement, IncomeRule } from "./types"
 
 export function buildMonthDays(selectedDate: Date) {
   const y = selectedDate.getFullYear()
@@ -14,6 +14,7 @@ export function itemsForDay(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
+  transfers: BankTransfer[] = [],
   variableExpenseMap?: Map<number, number>
 ) {
   const day = date.getDate()
@@ -21,11 +22,13 @@ export function itemsForDay(
   const incs = incomes.filter((r) => r.day_of_month === day)
   const bls = bills.filter((r) => r.day_of_month === day)
   const sts = statements.filter((s) => s.statement_month === monthStr && new Date(s.due_date).getDate() === day)
+  const tfs = transfers.filter((t) => t.transfer_month === monthStr && new Date(t.transfer_date).getDate() === day)
   const incomeTotal = incs.reduce((s, r) => s + r.amount, 0)
+  const transferTotal = tfs.reduce((s, t) => s + (t.direction === "entrada" ? t.amount : -t.amount), 0)
   const variableTotal = variableExpenseMap?.get(day) || 0
   const expenseTotal = bls.reduce((s, r) => s + r.amount, 0) + sts.reduce((s, r) => s + r.amount_total, 0) + variableTotal
-  const netDelta = incomeTotal - expenseTotal
-  return { incs, bls, sts, netDelta }
+  const netDelta = incomeTotal + transferTotal - expenseTotal
+  return { incs, bls, sts, tfs, netDelta }
 }
 
 export function projectDailyBalances(
@@ -33,13 +36,14 @@ export function projectDailyBalances(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
+  transfers: BankTransfer[] = [],
   variableExpenseMap?: Map<number, number>,
   startBalance = 0
 ) {
   const days = buildMonthDays(selectedDate)
   let balance = startBalance
   const result = days.map((d) => {
-    const { netDelta } = itemsForDay(d, incomes, bills, statements, variableExpenseMap)
+    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, variableExpenseMap)
     balance += netDelta
     const daysRemaining = days.length - d.getDate()
     const allowance = daysRemaining > 0 ? Math.max(0, Math.floor(balance / daysRemaining)) : 0

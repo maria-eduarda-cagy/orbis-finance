@@ -1,11 +1,12 @@
 "use client"
 import { useMemo, useState } from "react"
-import { CalendarDays, CalendarRange, Download, Settings, LogOut } from "lucide-react"
+import { CalendarDays, CalendarRange, Settings, LogOut, CreditCard, Landmark } from "lucide-react"
 import { NavLink } from "./NavLink"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { getSupabase } from "../../lib/supabaseClient"
+import { ThemeToggle } from "../theme/ThemeToggle"
 
 type SidebarProps = {
   userName: string
@@ -93,26 +94,31 @@ export function Sidebar({ userName, userEmail, onProfileUpdate }: SidebarProps) 
   }
 
   return (
-    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-background-elevated">
-      <div className="flex h-full flex-col px-4 py-6">
-        <div className="text-lg font-semibold text-foreground">Orbis Finance</div>
-        <div className="mt-6 space-y-2">
+    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:bg-gradient-to-b md:from-background-elevated md:via-background-elevated md:to-background-subtle">
+      <div className="flex h-full flex-col px-5 py-6 text-[17px]">
+        <div className="text-2xl font-semibold tracking-tight text-foreground">Orbis Finance</div>
+        <div className="mt-6 space-y-0">
           <NavLink href="/monthly" label="Dashboard Mensal" icon={<CalendarRange size={18} />} />
           <NavLink href="/daily" label="Dashboard Diário" icon={<CalendarDays size={18} />} />
-          <NavLink href="/import" label="Importar Fatura" icon={<Download size={18} />} />
+          <NavLink href="/accounts" label="Conta Bancária" icon={<Landmark size={18} />} />
+          <NavLink href="/cards" label="Gastos do Cartão" icon={<CreditCard size={18} />} />
           <NavLink href="/settings" label="Configurações" icon={<Settings size={18} />} />
         </div>
 
         <div className="mt-auto space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Tema</span>
+            <ThemeToggle />
+          </div>
           <button
             type="button"
             onClick={() => {
               setName(userName)
               setOpen(true)
             }}
-            className="flex w-full items-center gap-3 rounded-lg border border-border bg-background-subtle px-3 py-3 text-left hover:bg-background-elevated transition-colors cursor-pointer"
+            className="flex w-full items-center gap-3 rounded-xl bg-background-subtle/70 px-3 py-3 text-left hover:bg-background-elevated/80 transition-colors cursor-pointer"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground text-sm font-semibold shadow-[0_3px_8px_rgba(15,23,42,0.12)]">
               {initials}
             </div>
             <div className="min-w-0">
@@ -124,7 +130,7 @@ export function Sidebar({ userName, userEmail, onProfileUpdate }: SidebarProps) 
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-background-subtle transition-colors cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-background-elevated px-3 py-2 text-sm font-semibold text-foreground hover:bg-background-subtle/80 transition-colors cursor-pointer"
           >
             <LogOut size={16} />
             Sair

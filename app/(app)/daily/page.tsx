@@ -43,10 +43,15 @@ export default function DailyDashboard() {
     const bills = data?.bills || []
     const prevStatements = data?.prevStatements || []
     const prevTransactions = (data?.prevTransactions || []).reduce((s: number, r: { amount_brl: number }) => s + Number(r.amount_brl || 0), 0)
+    const prevTransfers = (data?.prevTransfers || []).reduce(
+      (s: number, r: { amount: number; direction: "entrada" | "saida" }) =>
+        s + (r.direction === "entrada" ? Number(r.amount || 0) : -Number(r.amount || 0)),
+      0
+    )
     const totalIncome = incomes.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
     const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
     const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
-    return totalIncome - totalBills - totalStatements
+    return totalIncome - totalBills - totalStatements + prevTransfers
   }, [data, month])
 
   const investmentPercentage = useMemo(() => Number((data as { investmentPercentage?: number })?.investmentPercentage || 0), [data])
@@ -64,8 +69,9 @@ export default function DailyDashboard() {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
+    const transfers = (data as { transfers?: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] })?.transfers || []
     const initial = (includeCarry ? startBalance : 0) - investmentMonthly
-    return projectDailyBalances(selectedDate, incomes, bills, statements, variableExpenseMap, initial)
+    return projectDailyBalances(selectedDate, incomes, bills, statements, transfers, variableExpenseMap, initial)
   }, [data, selectedDate, startBalance, includeCarry, investmentMonthly, variableExpenseMap])
 
   function addMonth(delta: number) {
@@ -81,17 +87,17 @@ export default function DailyDashboard() {
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Diário — ${month}`} />
       <div className="flex flex-wrap gap-2">
-        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(-1)}>
+        <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
         </Button>
-        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(1)}>
+        <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(1)}>
           Próximo mês
         </Button>
       </div>
 
       {isLoading && <div>Carregando...</div>}
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
+        <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
@@ -100,7 +106,7 @@ export default function DailyDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {days.map((d) => {
-          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], variableExpenseMap)
+          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], (data as { transfers?: any[] })?.transfers || [], variableExpenseMap)
           const bal = balances.find((b: { date: Date; balance: number; allowance: number }) => b.date.toDateString() === d.toDateString())
           return (
           <Card key={d.toISOString()} className="p-3">
@@ -114,6 +120,7 @@ export default function DailyDashboard() {
               <div className="tabular-nums">Receitas: R$ {items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0).toFixed(2)}</div>
               <div className="tabular-nums">Despesas: R$ {items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0).toFixed(2)}</div>
               <div className="tabular-nums">Cartões: R$ {items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0).toFixed(2)}</div>
+              <div className="tabular-nums">Transferências: R$ {items.tfs.reduce((s: number, r: { amount: number; direction: "entrada" | "saida" }) => s + (r.direction === "entrada" ? r.amount : -r.amount), 0).toFixed(2)}</div>
               <div className="pt-2 text-foreground font-medium tabular-nums">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
               </div>
             </Card>

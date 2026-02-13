@@ -252,7 +252,7 @@ export default function SettingsPage() {
                 {incomeRules.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
                     <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
-                    <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => deleteIncome(r.id)}>
+                    <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteIncome(r.id)}>
                       Remover
                     </Button>
                   </div>
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                 {billRules.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
                     <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
-                    <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => deleteBill(r.id)}>
+                    <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
                       Remover
                     </Button>
                   </div>
@@ -305,7 +305,7 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-semibold">Configurações</h2>
                 <p className="text-sm text-muted-foreground">Ajuste regras, notificações e despesas.</p>
               </div>
-              <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => router.back()}>
+              <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => router.back()}>
                 Fechar
               </Button>
             </div>
@@ -376,7 +376,7 @@ export default function SettingsPage() {
                   {incomeRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => deleteIncome(r.id)}>
+                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteIncome(r.id)}>
                         Remover
                       </Button>
                     </div>
@@ -402,7 +402,7 @@ export default function SettingsPage() {
                   {billRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => deleteBill(r.id)}>
+                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
                         Remover
                       </Button>
                     </div>

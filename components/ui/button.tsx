@@ -6,7 +6,7 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow-subtle transition-all hover:brightness-110 active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold shadow-[0_5px_12px_rgba(15,23,42,0.16)] transition-all hover:-translate-y-0.5 hover:shadow-[0_7px_14px_rgba(15,23,42,0.2)] active:translate-y-0 active:shadow-[0_4px_10px_rgba(15,23,42,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:pointer-events-none",
         className
       )}
       {...rest}

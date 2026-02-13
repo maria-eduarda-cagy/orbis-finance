@@ -67,3 +67,14 @@ export type VariableExpense = {
   category: string | null
   description?: string | null
 }
+
+export type BankTransfer = {
+  id: string
+  user_id: string
+  description: string | null
+  amount: number
+  transfer_date: string
+  transfer_month: string
+  direction: "entrada" | "saida"
+  bank_name: string | null
+}

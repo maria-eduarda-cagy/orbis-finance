@@ -4,10 +4,8 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
-import { Badge } from "../../../components/ui/badge"
-import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { AppHeader } from "../../../components/AppHeader"
-import { CardTransaction, VariableExpense } from "../../../lib/types"
+import { VariableExpense } from "../../../lib/types"
 import { totalVariableExpensesForMonth } from "../../../lib/variableExpenses"
 
 function formatMonth(date: Date) {
@@ -18,10 +16,7 @@ function formatMonth(date: Date) {
 
 export default function MonthlyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [hideNegative, setHideNegative] = useState(true)
-  const [showAll, setShowAll] = useState(false)
   const [includeCarry, setIncludeCarry] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
 
   const { data, refetch, isLoading } = useQuery({
@@ -79,54 +74,6 @@ export default function MonthlyDashboard() {
     }
   }, [proj, prevNet, includeCarry])
 
-  const transactions = useMemo(() => {
-    const list = (data?.transactions || []) as CardTransaction[]
-    return hideNegative ? list.filter((t) => Number(t.amount_brl) >= 0) : list
-  }, [data, hideNegative])
-
-  const filteredTransactions = useMemo(() => {
-    if (!selectedCategory) return transactions
-    return transactions.filter((t) => (t.category || "Sem categoria") === selectedCategory)
-  }, [transactions, selectedCategory])
-
-  const totalsByCard = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const t of filteredTransactions) {
-      const name = t.cards?.name || "Cartão"
-      map.set(name, (map.get(name) || 0) + Number(t.amount_brl || 0))
-    }
-    return Array.from(map.entries()).map(([name, total]) => ({ name, total }))
-  }, [filteredTransactions])
-
-  const totalsByCategoryAll = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const t of transactions) {
-      const name = t.category || "Sem categoria"
-      map.set(name, (map.get(name) || 0) + Number(t.amount_brl || 0))
-    }
-    return Array.from(map.entries()).map(([name, total]) => ({ name, total }))
-  }, [transactions])
-
-  const totalsByCategory = useMemo(() => {
-    if (!selectedCategory) return totalsByCategoryAll
-    return totalsByCategoryAll.filter((t) => t.name === selectedCategory)
-  }, [totalsByCategoryAll, selectedCategory])
-
-  const visibleTransactions = useMemo(() => {
-    if (showAll) return filteredTransactions
-    return filteredTransactions.slice(0, 20)
-  }, [filteredTransactions, showAll])
-
-  const barColors = [
-    "var(--chart-1)",
-    "var(--chart-2)",
-    "var(--chart-3)",
-    "var(--chart-4)",
-    "var(--chart-5)",
-    "var(--chart-6)",
-    "var(--chart-7)"
-  ]
-
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
     d.setMonth(d.getMonth() + delta)
@@ -137,10 +84,10 @@ export default function MonthlyDashboard() {
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Mensal — ${month}`} />
       <div className="flex flex-wrap gap-2">
-        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(-1)}>
+        <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
         </Button>
-        <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => addMonth(1)}>
+        <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(1)}>
           Próximo mês
         </Button>
         <Button onClick={() => refetch()}>Atualizar</Button>
@@ -173,153 +120,14 @@ export default function MonthlyDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
+        <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
         <span>Saldo inicial (mês anterior): R$ {prevNet.toFixed(2)}</span>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-foreground font-semibold">Gastos por categoria</div>
-            <div className="text-xs text-muted-foreground">Clique em uma barra para filtrar.</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-14 rounded-full bg-[var(--chart-1)]" />
-            <span className="h-1.5 w-10 rounded-full bg-[var(--chart-2)]" />
-            <span className="h-1.5 w-12 rounded-full bg-[var(--chart-4)]" />
-          </div>
-        </div>
-      </div>
-
-      <Card className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={totalsByCategoryAll}
-            barCategoryGap={22}
-            onClick={(e) => {
-              const payload = (e as { activePayload?: Array<{ payload?: { name?: string } }> })?.activePayload?.[0]?.payload
-              const name = payload?.name
-              if (!name) return
-              setSelectedCategory((current) => (current === name ? null : name))
-            }}
-          >
-            <XAxis dataKey="name" axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} axisLine={false} tickLine={false} />
-            <Tooltip
-              cursor={{ fill: "rgba(79,124,255,0.08)" }}
-              formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
-              contentStyle={{
-                background: "var(--background-elevated)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
-                borderRadius: 8
-              }}
-              labelStyle={{ color: "var(--muted-foreground)" }}
-              itemStyle={{ color: "var(--foreground)" }}
-            />
-            <Bar
-              dataKey="total"
-              activeBar={{ fillOpacity: 0.4 }}
-              radius={[10, 10, 6, 6]}
-            >
-              {totalsByCategoryAll.map((item, index) => {
-                const isSelected = selectedCategory ? item.name === selectedCategory : true
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={barColors[index % barColors.length]}
-                    fillOpacity={isSelected ? 1 : 0.3}
-                    style={{ cursor: "pointer" }}
-                  />
-                )
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-
-      {selectedCategory && (
-        <div className="flex items-center gap-2">
-          <Badge>{selectedCategory}</Badge>
-          <Button
-            className="bg-secondary text-secondary-foreground border border-border hover:brightness-110"
-            onClick={() => setSelectedCategory(null)}
-          >
-            Limpar filtro
-          </Button>
-        </div>
-      )}
-
       {isLoading && <div>Carregando...</div>}
-
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Gastos do Cartão</h2>
-            <p className="text-sm text-muted-foreground">Visualize itens detalhados por categoria.</p>
-          </div>
-          {selectedCategory && <Badge className="text-foreground">{selectedCategory}</Badge>}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <label className="flex items-center gap-2 rounded-full border border-border bg-background-elevated px-3 py-2">
-            <input type="checkbox" checked={hideNegative} onChange={(e) => setHideNegative(e.target.checked)} />
-            Ocultar valores negativos (pagamentos)
-          </label>
-          {filteredTransactions.length > 20 && (
-            <Button className="bg-secondary text-secondary-foreground border border-border hover:brightness-110" onClick={() => setShowAll((v) => !v)}>
-              {showAll ? "Mostrar menos" : "Mostrar todos"}
-            </Button>
-          )}
-        </div>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <Card>
-            <div className="font-medium text-foreground">Total por cartão</div>
-            <div className="mt-2 space-y-1">
-              {totalsByCard.length === 0 && <div className="text-muted-foreground">Sem dados.</div>}
-              {totalsByCard.map((t) => (
-                <div key={t.name} className="flex items-center justify-between">
-                  <span>{t.name}</span>
-                  <span className="font-semibold">R$ {t.total.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <Card>
-            <div className="font-medium text-foreground">Total por categoria</div>
-            <div className="mt-2 space-y-1">
-              {totalsByCategory.length === 0 && <div className="text-muted-foreground">Sem dados.</div>}
-              {totalsByCategory.map((t) => (
-                <div key={t.name} className="flex items-center justify-between">
-                  <span>{t.name}</span>
-                  <span className="font-semibold">R$ {t.total.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-        <div className="mt-4 space-y-2 text-sm">
-          {filteredTransactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
-          {visibleTransactions.map((t: CardTransaction) => (
-            <div key={t.id} className="flex flex-col gap-1 rounded-lg border border-border bg-background-elevated p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-medium text-foreground">
-                  {t.cards?.name || "Cartão"} • {t.purchase_date}
-                </div>
-                <div className={`${t.amount_brl < 0 ? "text-success" : "text-danger"} font-semibold`}>
-                  R$ {Number(t.amount_brl).toFixed(2)}
-                </div>
-              </div>
-              <div className="text-secondary-foreground">{t.description || "-"}</div>
-              <div className="text-muted-foreground">
-                {t.category || "-"} {t.installment ? `• ${t.installment}` : ""}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
     </main>
   )
 }

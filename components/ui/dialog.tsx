@@ -34,7 +34,7 @@ export const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={clsx(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-background-elevated p-6 shadow-card outline-none",
+          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-background-elevated p-6 shadow-[0_8px_18px_rgba(6,10,18,0.18)] outline-none",
           className
         )}
         {...props}
