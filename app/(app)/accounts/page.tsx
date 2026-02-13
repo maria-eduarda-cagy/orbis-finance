@@ -14,6 +14,7 @@ type BankTransfer = {
   transfer_month: string
   direction: "entrada" | "saida"
   bank_name: string | null
+  category: string | null
 }
 
 type BankStatementImport = {
@@ -33,7 +34,22 @@ type ParsedStatementRow = {
 function formatMonth(date: Date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, "0")
+  return `${y}-${m}`
+}
+
+function formatMonthLabel(month: string) {
+  const [y, m] = month.split("-")
+  if (!y || !m) return month
   return `${m}.${y}`
+}
+
+function nextMonthStr(month: string) {
+  const [yStr, mStr] = month.split("-")
+  const y = Number(yStr)
+  const m = Number(mStr)
+  if (!y || !m) return month
+  const d = new Date(y, m, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
 export default function AccountsPage() {
@@ -47,6 +63,9 @@ export default function AccountsPage() {
   const [customStatementBank, setCustomStatementBank] = useState("")
   const [statementFile, setStatementFile] = useState<File | null>(null)
   const [statementMessage, setStatementMessage] = useState<string | null>(null)
+  const [editingTransferId, setEditingTransferId] = useState<string | null>(null)
+  const [editingCategory, setEditingCategory] = useState("")
+  const [savingCategory, setSavingCategory] = useState(false)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
   const [transferDate, setTransferDate] = useState(`${month}-01`)
 
@@ -71,14 +90,33 @@ export default function AccountsPage() {
     "Outro"
   ]
 
+  const categoryOptions = [
+    "Moradia",
+    "Alimentação",
+    "Transporte",
+    "Saúde",
+    "Educação",
+    "Lazer",
+    "Serviços",
+    "Assinaturas",
+    "Compras",
+    "Viagem",
+    "Investimentos",
+    "Outros",
+    "Sem categoria"
+  ]
+
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["bank-transfers", month],
     queryFn: async () => {
       const supabase = getSupabase()
+      const monthStart = `${month}-01`
+      const monthEnd = `${nextMonthStr(month)}-01`
       const { data } = await supabase
         .from("bank_transfers")
         .select("*")
-        .eq("transfer_month", month)
+        .gte("transfer_date", monthStart)
+        .lt("transfer_date", monthEnd)
         .order("transfer_date", { ascending: true })
       return (data || []) as BankTransfer[]
     },
@@ -89,14 +127,18 @@ export default function AccountsPage() {
     refetchOnMount: "always"
   })
 
+  const transfers = useMemo(() => (data || []) as BankTransfer[], [data])
+  const monthTransfers = useMemo(() => transfers, [transfers])
+
   const { data: statementImports, refetch: refetchImports } = useQuery({
     queryKey: ["bank-statement-imports", month],
     queryFn: async () => {
       const supabase = getSupabase()
+      const monthLabel = formatMonthLabel(month)
       const { data } = await supabase
         .from("bank_statement_imports")
         .select("*")
-        .eq("statement_month", month)
+        .or(`statement_month.eq.${month},statement_month.eq.${monthLabel}`)
         .order("created_at", { ascending: false })
       return (data || []) as BankStatementImport[]
     },
@@ -155,15 +197,20 @@ export default function AccountsPage() {
     const supabase = getSupabase()
     const userId = await getUserId()
     if (!userId) return
-    await supabase.from("bank_transfers").insert({
+    const { error } = await supabase.from("bank_transfers").insert({
       user_id: userId,
       description: description.trim() || null,
       amount: parsedAmount,
       transfer_date: transferDate,
       transfer_month: month,
       direction,
-      bank_name: resolvedBank
+      bank_name: resolvedBank,
+      category: null
     })
+    if (error) {
+      setStatementMessage("Falha ao salvar a transferência.")
+      return
+    }
     setDescription("")
     setAmount("")
     setBankName("")
@@ -184,16 +231,21 @@ export default function AccountsPage() {
       setStatementMessage("Não foi possível ler o extrato.")
       return
     }
-    const { data: importRow } = await supabase
+    const fileMonth = rows[0].transfer_date.slice(0, 7)
+    const { data: importRow, error: importError } = await supabase
       .from("bank_statement_imports")
       .insert({
         user_id: userId,
         bank: resolvedBank,
-        statement_month: month,
+        statement_month: fileMonth,
         file_name: statementFile.name
       })
       .select("id")
       .single()
+    if (importError) {
+      setStatementMessage("Falha ao registrar o import.")
+      return
+    }
     const importId = importRow?.id || null
     const transfers = rows.map((row) => ({
       user_id: userId,
@@ -203,14 +255,33 @@ export default function AccountsPage() {
       transfer_date: row.transfer_date,
       transfer_month: row.transfer_date.slice(0, 7),
       direction: row.amount >= 0 ? "entrada" : "saida",
-      import_batch_id: importId
+      import_batch_id: importId,
+      category: null
     }))
-    await supabase.from("bank_transfers").insert(transfers)
+    const { error: transferError } = await supabase.from("bank_transfers").insert(transfers)
+    if (transferError) {
+      setStatementMessage(`Falha ao importar transferências: ${transferError.message}`)
+      return
+    }
     setStatementFile(null)
     setStatementBank("")
     setCustomStatementBank("")
     refetchImports()
     refetch()
+    const { count } = await supabase
+      .from("bank_transfers")
+      .select("id", { count: "exact", head: true })
+      .eq("import_batch_id", importId || "")
+    setStatementMessage(`Extrato importado: ${transfers.length} linhas. Salvas: ${count ?? 0}.`)
+    if (fileMonth) {
+      const [y, m] = fileMonth.split("-").map((v) => Number(v))
+      if (y && m) {
+        const nextDate = new Date(y, m - 1, 1)
+        setSelectedDate(nextDate)
+        setTransferDate(`${fileMonth}-01`)
+      }
+    }
+    setStatementMessage(`Extrato importado para ${fileMonth}.`)
   }
 
   async function removeStatementImport(id: string) {
@@ -221,9 +292,24 @@ export default function AccountsPage() {
     refetch()
   }
 
+  async function saveTransferCategory(id: string) {
+    const value = editingCategory.trim()
+    if (!value) {
+      setEditingTransferId(null)
+      return
+    }
+    setSavingCategory(true)
+    const supabase = getSupabase()
+    await supabase.from("bank_transfers").update({ category: value }).eq("id", id)
+    setSavingCategory(false)
+    setEditingTransferId(null)
+    setEditingCategory("")
+    refetch()
+  }
+
   return (
     <main className="p-4 space-y-6">
-      <AppHeader title={`Conta Bancária — ${month}`} />
+      <AppHeader title={`Conta Bancária — ${formatMonthLabel(month)}`} />
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
@@ -231,7 +317,7 @@ export default function AccountsPage() {
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(1)}>
           Próximo mês
         </Button>
-        <Button onClick={() => refetch()}>Atualizar</Button>
+        
       </div>
 
       <Card>
@@ -367,13 +453,61 @@ export default function AccountsPage() {
         <div className="text-lg font-semibold">Histórico do mês</div>
         {isLoading && <div className="mt-3 text-sm text-muted-foreground">Carregando...</div>}
         <div className="mt-3 space-y-2 text-sm">
-          {(data || []).length === 0 && !isLoading && <div className="text-muted-foreground">Sem transferências.</div>}
-          {(data || []).map((item) => (
+          {monthTransfers.length === 0 && !isLoading && <div className="text-muted-foreground">Sem transferências.</div>}
+          {monthTransfers.map((item) => (
             <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-background-elevated p-3 shadow-[0_5px_12px_rgba(6,10,18,0.14)]">
               <div>
                 <div className="font-medium text-foreground">{item.description || "Transferência"}</div>
                 {item.bank_name && <div className="text-xs text-muted-foreground">{item.bank_name}</div>}
                 <div className="text-xs text-muted-foreground">{item.transfer_date}</div>
+                {editingTransferId === item.id ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <select
+                      value={editingCategory}
+                      onChange={(e) => setEditingCategory(e.target.value)}
+                      className="rounded-full bg-background-subtle text-foreground px-3 py-2 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                    >
+                      {categoryOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      className="bg-secondary text-secondary-foreground hover:brightness-110"
+                      onClick={() => saveTransferCategory(item.id)}
+                      disabled={savingCategory}
+                    >
+                      {savingCategory ? "Salvando..." : "Salvar"}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTransferId(null)
+                        setEditingCategory("")
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded-full bg-background-subtle px-2 py-1 text-muted-foreground">
+                      {item.category || "Sem categoria"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTransferId(item.id)
+                        setEditingCategory(item.category || "Sem categoria")
+                      }}
+                      className="text-xs font-semibold text-primary hover:text-foreground transition-colors"
+                    >
+                      Editar categoria
+                    </button>
+                  </div>
+                )}
               </div>
               <div className={`font-semibold ${item.direction === "entrada" ? "text-success" : "text-danger"}`}>
                 {item.direction === "entrada" ? "+" : "-"} R$ {Number(item.amount).toFixed(2)}

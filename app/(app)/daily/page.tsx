@@ -82,6 +82,16 @@ export default function DailyDashboard() {
 
   const totalDays = daysInMonth(selectedDate)
   const days = Array.from({ length: totalDays }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1))
+  const today = new Date()
+  const isSameMonthAsToday =
+    selectedDate.getFullYear() === today.getFullYear() && selectedDate.getMonth() === today.getMonth()
+  const todayDateKey = today.toDateString()
+  const orderedDays = isSameMonthAsToday
+    ? [
+        ...days.filter((d) => d.toDateString() === todayDateKey),
+        ...days.filter((d) => d.toDateString() !== todayDateKey)
+      ]
+    : days
 
   return (
     <main className="p-4 space-y-6">
@@ -105,13 +115,19 @@ export default function DailyDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {days.map((d) => {
+        {orderedDays.map((d) => {
+          const isToday = d.toDateString() === todayDateKey && isSameMonthAsToday
           const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], (data as { transfers?: any[] })?.transfers || [], variableExpenseMap)
           const bal = balances.find((b: { date: Date; balance: number; allowance: number }) => b.date.toDateString() === d.toDateString())
           return (
-          <Card key={d.toISOString()} className="p-3">
+          <Card
+            key={d.toISOString()}
+            className={`p-3 ${isToday ? "ring-2 ring-primary/60 bg-background-elevated/90 sm:col-span-2 lg:col-span-3 w-full" : ""}`}
+          >
               <div className="flex items-center justify-between">
-                <div className="font-medium">{d.toLocaleDateString("pt-BR")}</div>
+                <div className={`font-medium ${isToday ? "text-primary" : ""}`}>
+                  {d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                </div>
               <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold tabular-nums`}>
                 R$ {(bal?.balance || 0).toFixed(2)}
                 </div>
