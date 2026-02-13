@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-const PROTECTED_PREFIXES = ["/dashboard", "/import", "/settings"]
+const PUBLIC_PATHS = ["/", "/login", "/register"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
-  if (!isProtected) return NextResponse.next()
+  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (isPublic) return NextResponse.next()
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -38,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/import", "/settings"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|brand-logo.svg|preview-.*\\.svg|api).*)"]
 }
