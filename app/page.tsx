@@ -1,17 +1,24 @@
-"use client"
-import Link from "next/link"
-import { Button } from "../components/ui/button"
-import { Card } from "../components/ui/card"
-import { Badge } from "../components/ui/badge"
+"use client";
+import Link from "next/link";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 
 export default function HomePage() {
   return (
     <main className="px-4 py-10 sm:py-16 space-y-16">
       <header className="max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-lg font-semibold tracking-tight">Orbis Finance</div>
+        <div className="flex flex-col items-start">
+          <div className="text-5xl font-bold tracking-tight">
+            Orbis Finance
+          </div>
+ 
+        </div>
         <div className="flex items-center gap-3">
           <Link href="/login">
-            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
+            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">
+              Entrar
+            </Button>
           </Link>
           <Link href="/register">
             <Button className="glow">Começar agora</Button>
@@ -21,19 +28,21 @@ export default function HomePage() {
 
       <section className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
         <div className="space-y-5">
-          <Badge>Controle diário inteligente</Badge>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight">
             Um painel financeiro moderno para decisões rápidas e seguras
           </h1>
           <p className="text-muted-foreground max-w-xl">
-            Orbis Finance antecipa vencimentos, organiza faturas e transforma seus dados em projeções diárias claras.
+            Orbis Finance antecipa vencimentos, organiza faturas e transforma
+            seus dados em projeções diárias claras.
           </p>
           <div className="flex items-center gap-3">
             <Link href="/register">
               <Button className="glow">Começar agora</Button>
             </Link>
             <Link href="/login">
-              <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
+              <Button className="bg-secondary text-secondary-foreground hover:brightness-110">
+                Entrar
+              </Button>
             </Link>
           </div>
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -67,34 +76,48 @@ export default function HomePage() {
       <section className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <h3 className="font-semibold">Visão Mensal</h3>
-          <p className="text-sm text-muted-foreground mt-1">Receitas, despesas fixas e faturas em um só lugar.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Receitas, despesas fixas e faturas em um só lugar.
+          </p>
         </Card>
         <Card>
           <h3 className="font-semibold">Saldo Diário</h3>
-          <p className="text-sm text-muted-foreground mt-1">Allowance dinâmico com projeção por dia.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Allowance dinâmico com projeção por dia.
+          </p>
         </Card>
         <Card>
           <h3 className="font-semibold">Alertas no Telegram</h3>
-          <p className="text-sm text-muted-foreground mt-1">Notificações com botões: pagar, adiar, abrir.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Notificações com botões: pagar, adiar, abrir.
+          </p>
         </Card>
         <Card>
           <h3 className="font-semibold">Regras Recorrentes</h3>
-          <p className="text-sm text-muted-foreground mt-1">Automação mensal sem reentrada manual.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Automação mensal sem reentrada manual.
+          </p>
         </Card>
       </section>
 
       <section className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <h4 className="font-semibold">1. Configure</h4>
-          <p className="text-sm text-muted-foreground mt-1">Adicione receitas, contas fixas e cartões.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Adicione receitas, contas fixas e cartões.
+          </p>
         </Card>
         <Card>
           <h4 className="font-semibold">2. Projete</h4>
-          <p className="text-sm text-muted-foreground mt-1">Acompanhe mês e dias com saldo previsto.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Acompanhe mês e dias com saldo previsto.
+          </p>
         </Card>
         <Card>
           <h4 className="font-semibold">3. Aja</h4>
-          <p className="text-sm text-muted-foreground mt-1">Receba alertas e marque pagamentos.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Receba alertas e marque pagamentos.
+          </p>
         </Card>
       </section>
 
@@ -118,13 +141,17 @@ export default function HomePage() {
       </section>
 
       <section className="max-w-4xl mx-auto text-center space-y-4">
-        <h2 className="text-2xl font-semibold">Pronto para assumir o controle?</h2>
+        <h2 className="text-2xl font-semibold">
+          Pronto para assumir o controle?
+        </h2>
         <div className="flex items-center justify-center gap-3">
           <Link href="/register">
             <Button className="glow">Começar agora</Button>
           </Link>
           <Link href="/login">
-            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">Entrar</Button>
+            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">
+              Entrar
+            </Button>
           </Link>
         </div>
       </section>
@@ -137,5 +164,5 @@ export default function HomePage() {
         </div>
       </footer>
     </main>
-  )
+  );
 }
