@@ -1,4 +1,4 @@
-import { BankTransfer, BillRule, CardStatement, IncomeRule } from "./types"
+import { BillRule, CardStatement, IncomeRule } from "./types"
 
 export function buildMonthDays(selectedDate: Date) {
   const y = selectedDate.getFullYear()
@@ -14,7 +14,7 @@ export function itemsForDay(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
-  transfers: BankTransfer[] = [],
+  transfers: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] = [],
   variableExpenseMap?: Map<number, number>
 ) {
   const day = date.getDate()
@@ -36,7 +36,7 @@ export function projectDailyBalances(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
-  transfers: BankTransfer[] = [],
+  transfers: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] = [],
   variableExpenseMap?: Map<number, number>,
   startBalance = 0
 ) {
