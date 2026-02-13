@@ -42,11 +42,17 @@ export function projectDailyBalances(
 ) {
   const days = buildMonthDays(selectedDate)
   let balance = startBalance
+  const monthNet = days.reduce((sum, d) => {
+    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, variableExpenseMap)
+    return sum + netDelta
+  }, 0)
+  const monthEndBalance = startBalance + monthNet
+  const perDayAllowance = monthEndBalance > 0 ? monthEndBalance / days.length : 0
   const result = days.map((d) => {
     const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, variableExpenseMap)
     balance += netDelta
-    const daysRemaining = days.length - d.getDate()
-    const allowance = daysRemaining > 0 ? Math.max(0, Math.floor(balance / daysRemaining)) : 0
+    const dayIndex = d.getDate()
+    const allowance = perDayAllowance > 0 ? Number((perDayAllowance * dayIndex).toFixed(2)) : 0
     return { date: d, balance, allowance }
   })
   return result
