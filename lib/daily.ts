@@ -14,7 +14,7 @@ export function itemsForDay(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
-  variableExpenseMap?: Map<string, number>
+  variableExpenseMap?: Map<number, number>
 ) {
   const day = date.getDate()
   const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
@@ -22,8 +22,8 @@ export function itemsForDay(
   const bls = bills.filter((r) => r.day_of_month === day)
   const sts = statements.filter((s) => s.statement_month === monthStr && new Date(s.due_date).getDate() === day)
   const incomeTotal = incs.reduce((s, r) => s + r.amount, 0)
-  const variableToday = variableExpenseMap?.get(date.toDateString()) || 0
-  const expenseTotal = bls.reduce((s, r) => s + r.amount, 0) + sts.reduce((s, r) => s + r.amount_total, 0) + variableToday
+  const variableTotal = variableExpenseMap?.get(day) || 0
+  const expenseTotal = bls.reduce((s, r) => s + r.amount, 0) + sts.reduce((s, r) => s + r.amount_total, 0) + variableTotal
   const netDelta = incomeTotal - expenseTotal
   return { incs, bls, sts, netDelta }
 }
@@ -33,7 +33,7 @@ export function projectDailyBalances(
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
-  variableExpenseMap?: Map<string, number>,
+  variableExpenseMap?: Map<number, number>,
   startBalance = 0
 ) {
   const days = buildMonthDays(selectedDate)
