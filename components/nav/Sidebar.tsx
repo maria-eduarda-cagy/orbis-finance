@@ -1,12 +1,11 @@
 "use client"
 import { useMemo, useState } from "react"
-import { CalendarDays, CalendarRange, Settings, LogOut, CreditCard, Landmark } from "lucide-react"
+import { CalendarDays, CalendarRange, Settings, LogOut, CreditCard, Landmark, Sliders } from "lucide-react"
 import { NavLink } from "./NavLink"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { getSupabase } from "../../lib/supabaseClient"
-import { ThemeToggle } from "../theme/ThemeToggle"
 
 type SidebarProps = {
   userName: string
@@ -102,14 +101,11 @@ export function Sidebar({ userName, userEmail, onProfileUpdate }: SidebarProps) 
           <NavLink href="/daily" label="Dashboard Diário" icon={<CalendarDays size={18} />} />
           <NavLink href="/accounts" label="Conta Bancária" icon={<Landmark size={18} />} />
           <NavLink href="/cards" label="Gastos do Cartão" icon={<CreditCard size={18} />} />
+          <NavLink href="/preferences" label="Preferências" icon={<Sliders size={18} />} />
           <NavLink href="/settings" label="Configurações" icon={<Settings size={18} />} />
         </div>
 
         <div className="mt-auto space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Tema</span>
-            <ThemeToggle />
-          </div>
           <button
             type="button"
             onClick={() => {
