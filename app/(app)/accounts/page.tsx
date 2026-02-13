@@ -5,6 +5,8 @@ import { AppHeader } from "../../../components/AppHeader"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { getSupabase } from "../../../lib/supabaseClient"
+import { formatMonth, formatMonthLabel, nextMonthStr, formatMonthTitle } from "../../../utils/date"
+import { BANK_OPTIONS, CATEGORY_OPTIONS } from "../../../utils/constants"
 
 type BankTransfer = {
   id: string
@@ -31,26 +33,6 @@ type ParsedStatementRow = {
   description: string
 }
 
-function formatMonth(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, "0")
-  return `${y}-${m}`
-}
-
-function formatMonthLabel(month: string) {
-  const [y, m] = month.split("-")
-  if (!y || !m) return month
-  return `${m}.${y}`
-}
-
-function nextMonthStr(month: string) {
-  const [yStr, mStr] = month.split("-")
-  const y = Number(yStr)
-  const m = Number(mStr)
-  if (!y || !m) return month
-  const d = new Date(y, m, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-}
 
 export default function AccountsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -69,42 +51,8 @@ export default function AccountsPage() {
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
   const [transferDate, setTransferDate] = useState(`${month}-01`)
 
-  const bankOptions = [
-    "Banco do Brasil",
-    "Caixa",
-    "Bradesco",
-    "Itaú",
-    "Santander",
-    "Banrisul",
-    "Sicoob",
-    "Sicredi",
-    "Nubank",
-    "Inter",
-    "C6 Bank",
-    "Banco Pan",
-    "Neon",
-    "PicPay",
-    "Next",
-    "BTG Pactual",
-    "XP",
-    "Outro"
-  ]
-
-  const categoryOptions = [
-    "Moradia",
-    "Alimentação",
-    "Transporte",
-    "Saúde",
-    "Educação",
-    "Lazer",
-    "Serviços",
-    "Assinaturas",
-    "Compras",
-    "Viagem",
-    "Investimentos",
-    "Outros",
-    "Sem categoria"
-  ]
+  const bankOptions = BANK_OPTIONS
+  const categoryOptions = CATEGORY_OPTIONS
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["bank-transfers", month],
@@ -309,7 +257,7 @@ export default function AccountsPage() {
 
   return (
     <main className="p-4 space-y-6">
-      <AppHeader title={`Conta Bancária — ${formatMonthLabel(month)}`} />
+      <AppHeader title={`Conta Bancária — ${formatMonthTitle(month)}`} />
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior

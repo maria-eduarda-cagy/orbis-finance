@@ -8,18 +8,7 @@ import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { IncomeRule, BillRule, CardStatement, VariableExpense } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
-
-function formatMonth(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, "0")
-  return `${y}-${m}`
-}
-
-function daysInMonth(date: Date) {
-  const y = date.getFullYear()
-  const m = date.getMonth()
-  return new Date(y, m + 1, 0).getDate()
-}
+import { formatMonth, daysInMonth, formatMonthTitle } from "../../../utils/date"
 
 export default function DailyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -95,7 +84,7 @@ export default function DailyDashboard() {
 
   return (
     <main className="p-4 space-y-6">
-      <AppHeader title={`Dashboard Diário — ${month}`} />
+      <AppHeader title={`Dashboard Diário — ${formatMonthTitle(month)}`} />
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
