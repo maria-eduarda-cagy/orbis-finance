@@ -57,3 +57,13 @@ export type InvestmentSettings = {
   monthly_amount: number
   monthly_percentage: number
 }
+
+export type VariableExpense = {
+  id: string
+  user_id: string
+  month: string
+  day_of_month: number
+  amount: number
+  category: string | null
+  description?: string | null
+}
