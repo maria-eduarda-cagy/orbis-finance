@@ -187,7 +187,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6">
-            <Card>
+            
+            {/* <Card>
               <div>
                 <h3 className="text-base font-semibold">Notificações (Telegram)</h3>
                 <p className="text-sm text-muted-foreground">Receba avisos antes do vencimento.</p>
@@ -209,7 +210,7 @@ export default function SettingsPage() {
               <Button className="mt-3" onClick={saveNotifications} disabled={loading}>
                 {loading ? "Salvando..." : "Salvar notificações"}
               </Button>
-            </Card>
+            </Card> */}
 
             <Card>
               <div>
@@ -311,7 +312,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-6">
-              <Card>
+              {/* <Card>
                 <div>
                   <h3 className="text-base font-semibold">Notificações (Telegram)</h3>
                   <p className="text-sm text-muted-foreground">Receba avisos antes do vencimento.</p>
@@ -333,7 +334,7 @@ export default function SettingsPage() {
                 <Button className="mt-3" onClick={saveNotifications} disabled={loading}>
                   {loading ? "Salvando..." : "Salvar notificações"}
                 </Button>
-              </Card>
+              </Card> */}
 
               <Card>
                 <div>
