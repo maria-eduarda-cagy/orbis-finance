@@ -9,6 +9,7 @@ import { Button } from "../../../components/ui/button"
 import { IncomeRule, BillRule, CardStatement, VariableExpense } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
 import { formatMonth, daysInMonth, formatMonthTitle } from "../../../utils/date"
+import { CurrencyText } from "../../../components/format/CurrencyText"
 
 export default function DailyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -100,7 +101,7 @@ export default function DailyDashboard() {
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
-        <span>Saldo inicial (mês anterior): R$ {startBalance.toFixed(2)}</span>
+        <span>Saldo inicial (mês anterior): <CurrencyText value={startBalance} /></span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -117,16 +118,16 @@ export default function DailyDashboard() {
                 <div className={`font-medium ${isToday ? "text-primary" : ""}`}>
                   {d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
                 </div>
-              <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold tabular-nums`}>
-                R$ {(bal?.balance || 0).toFixed(2)}
-                </div>
+              <div className={`${(bal?.balance || 0) < 0 ? "text-danger" : "text-success"} font-semibold`}>
+                <CurrencyText value={bal?.balance || 0} />
+              </div>
               </div>
               <div className="mt-2 text-sm text-muted-foreground space-y-1">
-              <div className="tabular-nums">Receitas: R$ {items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0).toFixed(2)}</div>
-              <div className="tabular-nums">Despesas: R$ {items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0).toFixed(2)}</div>
-              <div className="tabular-nums">Cartões: R$ {items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0).toFixed(2)}</div>
-              <div className="tabular-nums">Transferências: R$ {items.tfs.reduce((s: number, r: { amount: number; direction: "entrada" | "saida" }) => s + (r.direction === "entrada" ? r.amount : -r.amount), 0).toFixed(2)}</div>
-              <div className="pt-2 text-foreground font-medium tabular-nums">Allowance diário: R$ {(bal?.allowance || 0).toFixed(2)}</div>
+              <div>Receitas: <CurrencyText value={items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0)} /></div>
+              <div>Despesas: <CurrencyText value={items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0)} /></div>
+              <div>Cartões: <CurrencyText value={items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0)} /></div>
+              <div>Transferências: <CurrencyText value={items.tfs.reduce((s: number, r: { amount: number; direction: "entrada" | "saida" }) => s + (r.direction === "entrada" ? r.amount : -r.amount), 0)} /></div>
+              <div className="pt-2 text-foreground font-medium">Allowance diário: <CurrencyText value={bal?.allowance || 0} /></div>
               </div>
             </Card>
           )

@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/button"
 import { getSupabase } from "../../../lib/supabaseClient"
 import { formatMonth, formatMonthLabel, nextMonthStr, formatMonthTitle } from "../../../utils/date"
 import { BANK_OPTIONS, CATEGORY_OPTIONS } from "../../../utils/constants"
+import { CurrencyText } from "../../../components/format/CurrencyText"
 
 type BankTransfer = {
   id: string
@@ -458,7 +459,7 @@ export default function AccountsPage() {
                 )}
               </div>
               <div className={`font-semibold ${item.direction === "entrada" ? "text-success" : "text-danger"}`}>
-                {item.direction === "entrada" ? "+" : "-"} R$ {Number(item.amount).toFixed(2)}
+                <CurrencyText value={Number(item.amount)} />
               </div>
             </div>
           ))}

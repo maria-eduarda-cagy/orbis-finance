@@ -7,6 +7,7 @@ import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
 import { BillRule, IncomeRule, InvestmentSettings } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
+import { CurrencyText } from "../../../components/format/CurrencyText"
 
 type NotificationSettings = {
   user_id: string
@@ -252,7 +253,7 @@ export default function SettingsPage() {
               <div className="mt-4 space-y-2">
                 {incomeRules.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
-                    <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
+                    <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
                     <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteIncome(r.id)}>
                       Remover
                     </Button>
@@ -278,7 +279,7 @@ export default function SettingsPage() {
               <div className="mt-4 space-y-2">
                 {billRules.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
-                    <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
+                    <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
                     <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
                       Remover
                     </Button>
@@ -376,7 +377,7 @@ export default function SettingsPage() {
                 <div className="mt-4 space-y-2">
                   {incomeRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
-                      <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
+                      <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
                       <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteIncome(r.id)}>
                         Remover
                       </Button>
@@ -402,7 +403,7 @@ export default function SettingsPage() {
                 <div className="mt-4 space-y-2">
                   {billRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
-                      <div>{r.description} — R$ {r.amount.toFixed(2)} — dia {r.day_of_month}</div>
+                      <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
                       <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
                         Remover
                       </Button>
