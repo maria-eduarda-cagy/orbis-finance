@@ -11,20 +11,29 @@ const Ctx = createContext<ContextValue | null>(null)
 const STORAGE_KEY = "orbis-hide-numbers"
 
 function getInitialHidden(): boolean {
-  if (typeof window === "undefined") return false
-  const v = window.localStorage.getItem(STORAGE_KEY)
-  return v === "1"
+  // Para evitar hydration mismatch, sempre começamos com false no SSR e no primeiro render do cliente.
+  return false
 }
 
 export function NumberVisibilityProvider({ children }: { children: React.ReactNode }) {
   const [hidden, setHidden] = useState<boolean>(() => getInitialHidden())
 
   useEffect(() => {
-    if (hidden) {
-      window.localStorage.setItem(STORAGE_KEY, "1")
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY)
-    }
+    // Sincroniza a partir do localStorage após montar no cliente
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY)
+      if (stored === "1") setHidden(true)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      if (hidden) {
+        window.localStorage.setItem(STORAGE_KEY, "1")
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY)
+      }
+    } catch {}
   }, [hidden])
 
   const value = useMemo<ContextValue>(
