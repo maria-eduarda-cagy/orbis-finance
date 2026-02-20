@@ -12,6 +12,7 @@ import { getSupabase } from "../../../lib/supabaseClient";
 import { formatMonth, formatMonthTitle } from "../../../utils/date";
 import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
+import { CurrencyText } from "../../../components/format/CurrencyText";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -167,7 +168,7 @@ export default function CardExpensesPage() {
                   {t.cards?.name || "Cartão"} • {t.purchase_date}
                 </div>
                 <div className={`${t.amount_brl < 0 ? "text-success" : "text-danger"} font-semibold`}>
-                  R$ {Number(t.amount_brl).toFixed(2)}
+                  <CurrencyText value={Number(t.amount_brl)} />
                 </div>
               </div>
               <div className="text-secondary-foreground">{t.description || "-"}</div>

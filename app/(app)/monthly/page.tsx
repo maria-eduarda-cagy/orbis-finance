@@ -11,8 +11,11 @@ import { VariableExpense, CardTransaction, BankTransfer } from "../../../lib/typ
 import { totalVariableExpensesForMonth } from "../../../lib/variableExpenses"
 import { formatMonth, formatMonthTitle } from "../../../utils/date"
 import { normalizeCategory } from "../../../utils/category"
+import { CurrencyText } from "../../../components/format/CurrencyText"
+import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
 
 export default function MonthlyDashboard() {
+  const { hidden } = useNumberVisibility()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [hideNegative, setHideNegative] = useState(true)
   const [showAll, setShowAll] = useState(false)
@@ -170,25 +173,25 @@ export default function MonthlyDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <Card>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Receitas</div>
-          <div className="mt-2 text-2xl font-semibold">R$ {proj.totalIncome?.toFixed(2)}</div>
+          <div className="mt-2 text-2xl font-semibold"><CurrencyText value={proj.totalIncome || 0} /></div>
         </Card>
         <Card>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Despesas Fixas</div>
-          <div className="mt-2 text-2xl font-semibold">R$ {totalBillsOnly.toFixed(2)}</div>
+          <div className="mt-2 text-2xl font-semibold"><CurrencyText value={totalBillsOnly} /></div>
         </Card>
         <Card>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Investimentos</div>
-          <div className="mt-2 text-2xl font-semibold">R$ {investmentMonthly.toFixed(2)}</div>
+          <div className="mt-2 text-2xl font-semibold"><CurrencyText value={investmentMonthly} /></div>
           <div className="text-xs text-muted-foreground mt-1">{investmentPercentage}% das receitas</div>
         </Card>
         <Card>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Cartões</div>
-          <div className="mt-2 text-2xl font-semibold">R$ {proj.totalStatements?.toFixed(2)}</div>
+          <div className="mt-2 text-2xl font-semibold"><CurrencyText value={proj.totalStatements || 0} /></div>
         </Card>
         <Card>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Saldo Projetado</div>
           <div className={`mt-2 text-2xl font-semibold ${projWithCarry.net < 0 ? "text-danger" : "text-success"}`}>
-            R$ {projWithCarry.net?.toFixed(2)}
+            <CurrencyText value={projWithCarry.net || 0} />
           </div>
         </Card>
       </div>
@@ -198,7 +201,7 @@ export default function MonthlyDashboard() {
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
-        <span>Saldo inicial (mês anterior): R$ {prevNet.toFixed(2)}</span>
+        <span>Saldo inicial (mês anterior): <CurrencyText value={prevNet} /></span>
       </div>
 
       <div>
@@ -228,10 +231,10 @@ export default function MonthlyDashboard() {
             }}
           >
             <XAxis dataKey="name" axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}`} axisLine={false} tickLine={false} />
+            <YAxis tickFormatter={(v) => (hidden ? "-" : `${Number(v).toFixed(0)}`)} axisLine={false} tickLine={false} />
             <Tooltip
               cursor={{ fill: "rgba(79,124,255,0.08)" }}
-              formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
+              formatter={(value) => (hidden ? `R$ -` : `R$ ${Number(value).toFixed(2)}`)}
               contentStyle={{
                 background: "var(--background-elevated)",
                 border: "1px solid var(--border)",
@@ -297,7 +300,7 @@ export default function MonthlyDashboard() {
               {totalsByCard.map((t) => (
                 <div key={t.name} className="flex items-center justify-between">
                   <span>{t.name}</span>
-                  <span className="font-semibold">R$ {t.total.toFixed(2)}</span>
+                  <span className="font-semibold"><CurrencyText value={t.total} /></span>
                 </div>
               ))}
             </div>
@@ -309,7 +312,7 @@ export default function MonthlyDashboard() {
               {totalsByCategory.map((t) => (
                 <div key={t.name} className="flex items-center justify-between">
                   <span>{t.name}</span>
-                  <span className="font-semibold">R$ {t.total.toFixed(2)}</span>
+                  <span className="font-semibold"><CurrencyText value={t.total} /></span>
                 </div>
               ))}
             </div>
@@ -327,15 +330,15 @@ export default function MonthlyDashboard() {
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <Card>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Entradas</div>
-            <div className="mt-2 text-xl font-semibold text-success">R$ {transferTotals.incoming.toFixed(2)}</div>
+            <div className="mt-2 text-xl font-semibold text-success"><CurrencyText value={transferTotals.incoming} /></div>
           </Card>
           <Card>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Saídas</div>
-            <div className="mt-2 text-xl font-semibold text-danger">R$ {transferTotals.outgoing.toFixed(2)}</div>
+            <div className="mt-2 text-xl font-semibold text-danger"><CurrencyText value={transferTotals.outgoing} /></div>
           </Card>
           <Card>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Saldo</div>
-            <div className="mt-2 text-xl font-semibold">R$ {transferTotals.net.toFixed(2)}</div>
+            <div className="mt-2 text-xl font-semibold"><CurrencyText value={transferTotals.net} /></div>
           </Card>
         </div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -346,7 +349,7 @@ export default function MonthlyDashboard() {
               {transfersByBank.map((t) => (
                 <div key={t.name} className="flex items-center justify-between">
                   <span>{t.name}</span>
-                  <span className="font-semibold">R$ {t.total.toFixed(2)}</span>
+                  <span className="font-semibold"><CurrencyText value={t.total} /></span>
                 </div>
               ))}
             </div>
@@ -359,7 +362,7 @@ export default function MonthlyDashboard() {
                 <div key={t.id} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{t.transfer_date}</span>
                   <span className={t.direction === "entrada" ? "text-success" : "text-danger"}>
-                    {t.direction === "entrada" ? "+" : "-"} R$ {Number(t.amount).toFixed(2)}
+                    <CurrencyText value={Number(t.amount)} />
                   </span>
                 </div>
               ))}
