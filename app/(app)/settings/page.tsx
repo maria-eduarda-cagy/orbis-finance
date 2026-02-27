@@ -95,6 +95,12 @@ export default function SettingsPage() {
     loadMonthData()
   }, [selectedMonth])
 
+  async function getUserId() {
+    const supabase = getSupabase()
+    const { data } = await supabase.auth.getUser()
+    return data.user?.id || null
+  }
+
   async function addMonthlyIncome() {
     setMessage(null)
     const amount = Number(miAmount)
@@ -105,12 +111,23 @@ export default function SettingsPage() {
     }
     setLoading(true)
     const supabase = getSupabase()
+    const userId = await getUserId()
+    if (!userId) {
+      setLoading(false)
+      setMessage("Usuário não autenticado.")
+      return
+    }
     const { data, error } = await supabase
       .from("monthly_incomes")
-      .insert({ description: miDesc, amount, day_of_month: day, month: selectedMonth, category: miCategory || null })
+      .insert({ user_id: userId, description: miDesc, amount, day_of_month: day, month: selectedMonth, category: miCategory || null })
       .select()
       .single()
-    if (!error && data) setMonthlyIncomes((prev) => [...prev, data as MonthlyIncome])
+    if (error) {
+      setLoading(false)
+      setMessage("Falha ao salvar a receita do mês.")
+      return
+    }
+    if (data) setMonthlyIncomes((prev) => [...prev, data as MonthlyIncome])
     setMiDesc("")
     setMiAmount("")
     setMiDay("")
@@ -134,12 +151,23 @@ export default function SettingsPage() {
     }
     setLoading(true)
     const supabase = getSupabase()
+    const userId = await getUserId()
+    if (!userId) {
+      setLoading(false)
+      setMessage("Usuário não autenticado.")
+      return
+    }
     const { data, error } = await supabase
       .from("variable_expenses")
-      .insert({ description: veDesc, amount, day_of_month: day, month: selectedMonth, category: veCategory || null })
+      .insert({ user_id: userId, description: veDesc, amount, day_of_month: day, month: selectedMonth, category: veCategory || null })
       .select()
       .single()
-    if (!error && data) setVariableExpenses((prev) => [...prev, data as VariableExpense])
+    if (error) {
+      setLoading(false)
+      setMessage("Falha ao salvar a despesa variável.")
+      return
+    }
+    if (data) setVariableExpenses((prev) => [...prev, data as VariableExpense])
     setVeDesc("")
     setVeAmount("")
     setVeDay("")
