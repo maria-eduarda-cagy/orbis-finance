@@ -261,9 +261,7 @@ export default function AccountsPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Conta Bancária — ${formatMonthTitle(month)}`} />
-      {((!data && isLoading) || (isFetching && Array.isArray(data) && data.length === 0)) && (
-        <UpdatingOverlay label="Atualizando dados..." />
-      )}
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
