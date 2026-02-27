@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { fetchMonthData } from "../../../lib/projection";
 import { Card } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
@@ -34,6 +34,7 @@ export default function CardExpensesPage() {
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
@@ -122,7 +123,10 @@ export default function CardExpensesPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
-      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
+      {((!data && isLoading) ||
+        (isFetching && data && ((data.transactions?.length || 0) + (data.statements?.length || 0)) === 0)) && (
+        <UpdatingOverlay label="Atualizando dados..." />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/import">
           <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">

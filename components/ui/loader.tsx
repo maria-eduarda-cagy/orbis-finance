@@ -25,19 +25,19 @@ export function UpdatingOverlay({ label = "Atualizando dados..." }: { label?: st
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
-    const prevOverflowHtml = document.documentElement.style.overflow
-    const prevOverflowBody = document.body.style.overflow
+    const prevOverflow = document.documentElement.style.overflow
+    const prevBodyOverflow = document.body.style.overflow
     document.documentElement.style.overflow = "hidden"
     document.body.style.overflow = "hidden"
     return () => {
-      document.documentElement.style.overflow = prevOverflowHtml
-      document.body.style.overflow = prevOverflowBody
+      document.documentElement.style.overflow = prevOverflow
+      document.body.style.overflow = prevBodyOverflow
     }
   }, [])
   if (typeof window === "undefined" || !mounted) return null
   return createPortal(
     <div className="fixed inset-0 z-[9999] m-0 p-0 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
       <div className="relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 text-card-foreground shadow-[0_10px_24px_rgba(6,10,18,0.28)]">
         <div className="flex items-center gap-3">
           <Loader2 className="h-5 w-5 animate-spin" />
