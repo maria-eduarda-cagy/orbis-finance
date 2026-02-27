@@ -8,6 +8,7 @@ import { getSupabase } from "../../../lib/supabaseClient"
 import { formatMonth, formatMonthLabel, nextMonthStr, formatMonthTitle } from "../../../utils/date"
 import { BANK_OPTIONS, CATEGORY_OPTIONS } from "../../../utils/constants"
 import { CurrencyText } from "../../../components/format/CurrencyText"
+import { LoaderInline, LoadingCard } from "../../../components/ui/loader"
 
 type BankTransfer = {
   id: string
@@ -55,7 +56,7 @@ export default function AccountsPage() {
   const bankOptions = BANK_OPTIONS
   const categoryOptions = CATEGORY_OPTIONS
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["bank-transfers", month],
     queryFn: async () => {
       const supabase = getSupabase()
@@ -259,6 +260,18 @@ export default function AccountsPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Conta Bancária — ${formatMonthTitle(month)}`} />
+      {!data && isLoading && (
+        <div className="space-y-3">
+          <LoadingCard />
+          <LoadingCard />
+          <LoaderInline />
+        </div>
+      )}
+      {data && isFetching && (
+        <div className="text-right">
+          <LoaderInline label="Atualizando dados..." />
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior

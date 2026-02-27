@@ -15,6 +15,7 @@ import { BANK_OPTIONS } from "../../../utils/constants";
 import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
 import { CurrencyText } from "../../../components/format/CurrencyText";
+import { LoaderInline, LoadingCard } from "../../../components/ui/loader";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -30,7 +31,7 @@ export default function CardExpensesPage() {
   const [savingCategory, setSavingCategory] = useState(false);
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate]);
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
     refetchInterval: 15000,
@@ -121,6 +122,18 @@ export default function CardExpensesPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
+      {!data && isLoading && (
+        <div className="space-y-3">
+          <LoadingCard />
+          <LoadingCard />
+          <LoaderInline />
+        </div>
+      )}
+      {data && isFetching && (
+        <div className="text-right">
+          <LoaderInline label="Atualizando dados..." />
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/import">
           <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
@@ -143,7 +156,7 @@ export default function CardExpensesPage() {
           </Button>
         </div>
       </div>
-      {isLoading && <div>Carregando...</div>}
+      
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
