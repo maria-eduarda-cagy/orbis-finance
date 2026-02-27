@@ -304,10 +304,14 @@ export default function SettingsPage() {
   return (
     <main className="relative min-h-screen">
       {(fetchingInit || fetchingMonth) && (
-        <div className="fixed top-3 right-3 z-50">
-          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
-            <span>Atualizando dados...</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
+          <div className="relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 text-card-foreground shadow-[0_10px_24px_rgba(6,10,18,0.28)]">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
+              <div className="text-sm font-medium">Atualizando dados...</div>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">Isso leva apenas alguns instantes.</div>
           </div>
         </div>
       )}

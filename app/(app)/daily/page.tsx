@@ -10,7 +10,7 @@ import { IncomeRule, BillRule, CardStatement, VariableExpense } from "../../../l
 import { AppHeader } from "../../../components/AppHeader"
 import { formatMonth, daysInMonth, formatMonthTitle } from "../../../utils/date"
 import { CurrencyText } from "../../../components/format/CurrencyText"
-import { LoaderInline, LoadingCard } from "../../../components/ui/loader"
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
 
 export default function DailyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -100,18 +100,7 @@ export default function DailyDashboard() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Diário — ${formatMonthTitle(month)}`} />
-      {!data && isLoading && (
-        <div className="space-y-3">
-          <LoadingCard />
-          <LoadingCard />
-          <LoaderInline />
-        </div>
-      )}
-      {data && isFetching && (
-        <div className="fixed top-3 right-3 z-50">
-          <LoaderInline label="Atualizando dados..." />
-        </div>
-      )}
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior

@@ -13,7 +13,7 @@ import { formatMonth, formatMonthTitle } from "../../../utils/date"
 import { normalizeCategory } from "../../../utils/category"
 import { CurrencyText } from "../../../components/format/CurrencyText"
 import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
-import { LoaderInline, LoadingCard } from "../../../components/ui/loader"
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
 
 export default function MonthlyDashboard() {
   const { hidden } = useNumberVisibility()
@@ -165,18 +165,7 @@ export default function MonthlyDashboard() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Mensal — ${formatMonthTitle(month)}`} />
-      {!data && isLoading && (
-        <div className="space-y-3">
-          <LoadingCard />
-          <LoadingCard />
-          <LoaderInline />
-        </div>
-      )}
-      {data && isFetching && (
-        <div className="fixed top-3 right-3 z-50">
-          <LoaderInline label="Atualizando dados..." />
-        </div>
-      )}
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior

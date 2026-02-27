@@ -15,7 +15,7 @@ import { BANK_OPTIONS } from "../../../utils/constants";
 import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
 import { CurrencyText } from "../../../components/format/CurrencyText";
-import { LoaderInline, LoadingCard } from "../../../components/ui/loader";
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -122,18 +122,7 @@ export default function CardExpensesPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
-      {!data && isLoading && (
-        <div className="space-y-3">
-          <LoadingCard />
-          <LoadingCard />
-          <LoaderInline />
-        </div>
-      )}
-      {data && isFetching && (
-        <div className="fixed top-3 right-3 z-50">
-          <LoaderInline label="Atualizando dados..." />
-        </div>
-      )}
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/import">
           <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
