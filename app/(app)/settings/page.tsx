@@ -8,7 +8,7 @@ import { Input } from "../../../components/ui/input"
 import { BillRule, IncomeRule, InvestmentSettings, VariableExpense, MonthlyIncome } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
 import { CurrencyText } from "../../../components/format/CurrencyText"
-import { formatMonth } from "../../../utils/date"
+import { formatMonth, daysInMonth } from "../../../utils/date"
 
 type NotificationSettings = {
   user_id: string
@@ -78,6 +78,12 @@ export default function SettingsPage() {
     loadAll()
   }, [])
 
+  const daysCount = (() => {
+    const d = new Date(`${selectedMonth}-01`)
+    return Number.isFinite(d.getTime()) ? daysInMonth(d) : 31
+  })()
+  const dayOptions = Array.from({ length: daysCount }, (_, i) => i + 1)
+
   useEffect(() => {
     async function loadMonthData() {
       const supabase = getSupabase()
@@ -92,10 +98,7 @@ export default function SettingsPage() {
   async function addMonthlyIncome() {
     setMessage(null)
     const amount = Number(miAmount)
-    const day = (() => {
-      const d = new Date(miDay)
-      return Number.isFinite(d.getTime()) ? d.getDate() : Number(miDay)
-    })()
+    const day = Number(miDay)
     if (!miDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -124,10 +127,7 @@ export default function SettingsPage() {
   async function addVariableExpense() {
     setMessage(null)
     const amount = Number(veAmount)
-    const day = (() => {
-      const d = new Date(veDay)
-      return Number.isFinite(d.getTime()) ? d.getDate() : Number(veDay)
-    })()
+    const day = Number(veDay)
     if (!veDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -156,10 +156,7 @@ export default function SettingsPage() {
   async function addIncome() {
     setMessage(null)
     const amount = Number(incAmount)
-    const day = (() => {
-      const d = new Date(incDay)
-      return Number.isFinite(d.getTime()) ? d.getDate() : Number(incDay)
-    })()
+    const day = Number(incDay)
     if (!incDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -181,10 +178,7 @@ export default function SettingsPage() {
   async function addBill() {
     setMessage(null)
     const amount = Number(billAmount)
-    const day = (() => {
-      const d = new Date(billDay)
-      return Number.isFinite(d.getTime()) ? d.getDate() : Number(billDay)
-    })()
+    const day = Number(billDay)
     if (!billDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -346,10 +340,15 @@ export default function SettingsPage() {
                 <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
                 </div>
-                <Input type="date" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Data" />
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
               </div>
+              <datalist id="days-options">
+                {dayOptions.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
               <Button className="mt-3" onClick={addIncome} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar receita"}
               </Button>
@@ -374,9 +373,9 @@ export default function SettingsPage() {
                 <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
                 </div>
-                <Input type="date" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Data" />
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
                 <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -403,9 +402,9 @@ export default function SettingsPage() {
                 <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
                 </div>
-                <Input type="date" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Data" />
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
                 <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
@@ -432,9 +431,9 @@ export default function SettingsPage() {
                 <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
                 </div>
-                <Input type="date" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Data" />
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
                 <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
@@ -481,6 +480,11 @@ export default function SettingsPage() {
                 <label className="text-sm text-muted-foreground">Mês</label>
                 <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
               </div>
+              <datalist id="days-options">
+                {dayOptions.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
               {/* <Card>
                 <div>
                   <h3 className="text-base font-semibold">Notificações (Telegram)</h3>
