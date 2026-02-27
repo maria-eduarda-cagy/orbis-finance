@@ -1,6 +1,6 @@
 "use client"
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { AppHeader } from "../../../components/AppHeader"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
@@ -70,6 +70,7 @@ export default function AccountsPage() {
         .order("transfer_date", { ascending: true })
       return (data || []) as BankTransfer[]
     },
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
@@ -260,7 +261,9 @@ export default function AccountsPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Conta Bancária — ${formatMonthTitle(month)}`} />
-      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
+      {((!data && isLoading) || (isFetching && Array.isArray(data) && data.length === 0)) && (
+        <UpdatingOverlay label="Atualizando dados..." />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior

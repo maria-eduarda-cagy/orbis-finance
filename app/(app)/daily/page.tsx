@@ -1,6 +1,6 @@
 "use client"
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { fetchMonthData } from "../../../lib/projection"
 import { itemsForDay, projectDailyBalances } from "../../../lib/daily"
 import { buildVariableExpenseMap } from "../../../lib/variableExpenses"
@@ -19,6 +19,7 @@ export default function DailyDashboard() {
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
@@ -100,7 +101,16 @@ export default function DailyDashboard() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Diário — ${formatMonthTitle(month)}`} />
-      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
+      {((!data && isLoading) ||
+        (isFetching &&
+          data &&
+          ((data.incomes?.length || 0) +
+            (data.bills?.length || 0) +
+            (data.statements?.length || 0) +
+            (data.transfers?.length || 0) +
+            ((data.monthlyIncomes?.length || 0) + (data.variableExpenses?.length || 0))) === 0)) && (
+        <UpdatingOverlay label="Atualizando dados..." />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
