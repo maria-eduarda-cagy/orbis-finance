@@ -92,7 +92,10 @@ export default function SettingsPage() {
   async function addMonthlyIncome() {
     setMessage(null)
     const amount = Number(miAmount)
-    const day = Number(miDay)
+    const day = (() => {
+      const d = new Date(miDay)
+      return Number.isFinite(d.getTime()) ? d.getDate() : Number(miDay)
+    })()
     if (!miDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -121,7 +124,10 @@ export default function SettingsPage() {
   async function addVariableExpense() {
     setMessage(null)
     const amount = Number(veAmount)
-    const day = Number(veDay)
+    const day = (() => {
+      const d = new Date(veDay)
+      return Number.isFinite(d.getTime()) ? d.getDate() : Number(veDay)
+    })()
     if (!veDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -150,7 +156,10 @@ export default function SettingsPage() {
   async function addIncome() {
     setMessage(null)
     const amount = Number(incAmount)
-    const day = Number(incDay)
+    const day = (() => {
+      const d = new Date(incDay)
+      return Number.isFinite(d.getTime()) ? d.getDate() : Number(incDay)
+    })()
     if (!incDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -172,7 +181,10 @@ export default function SettingsPage() {
   async function addBill() {
     setMessage(null)
     const amount = Number(billAmount)
-    const day = Number(billDay)
+    const day = (() => {
+      const d = new Date(billDay)
+      return Number.isFinite(d.getTime()) ? d.getDate() : Number(billDay)
+    })()
     if (!billDesc || isNaN(amount) || isNaN(day)) {
       setMessage("Preencha descrição, valor e dia.")
       return
@@ -332,8 +344,11 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" />
-                <Input value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="date" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Data" />
               </div>
               <Button className="mt-3" onClick={addIncome} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar receita"}
@@ -357,8 +372,11 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" />
-                <Input value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="date" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Data" />
                 <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -383,8 +401,11 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" />
-                <Input value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="date" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Data" />
                 <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
@@ -409,8 +430,11 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" />
-                <Input value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="date" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Data" />
                 <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
