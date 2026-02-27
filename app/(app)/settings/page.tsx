@@ -576,8 +576,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  </div>
+                  <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
                 </div>
                 <Button className="mt-3" onClick={addIncome} disabled={loading}>
                   {loading ? "Salvando..." : "Adicionar receita"}
@@ -601,8 +604,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  </div>
+                  <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
                   <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -627,8 +633,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  </div>
+                  <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
                   <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
@@ -653,8 +662,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                  </div>
+                  <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
                   <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
