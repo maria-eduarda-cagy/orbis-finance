@@ -1,8 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMonthData } from "../../../lib/projection";
 import { Card } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { AppHeader } from "../../../components/AppHeader";
@@ -10,12 +11,18 @@ import Link from "next/link";
 import { CardTransaction } from "../../../lib/types";
 import { getSupabase } from "../../../lib/supabaseClient";
 import { formatMonth, formatMonthTitle } from "../../../utils/date";
+import { BANK_OPTIONS } from "../../../utils/constants";
 import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
 import { CurrencyText } from "../../../components/format/CurrencyText";
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [cardMode, setCardMode] = useState<"import" | "total_only">("import");
+  const [manualCardName, setManualCardName] = useState("");
+  const [customCardName, setCustomCardName] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
   const [hideNegative, setHideNegative] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -24,7 +31,7 @@ export default function CardExpensesPage() {
   const [savingCategory, setSavingCategory] = useState(false);
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate]);
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
     refetchInterval: 15000,
@@ -33,6 +40,33 @@ export default function CardExpensesPage() {
     refetchOnReconnect: true,
     refetchOnMount: "always",
   });
+
+  useEffect(() => {
+    async function loadMode() {
+      const supabase = getSupabase();
+      const { data } = await supabase.from("user_card_mode").select("mode").single();
+      if (data?.mode === "import" || data?.mode === "total_only") setCardMode(data.mode);
+    }
+    loadMode();
+  }, []);
+
+  async function saveManualTotal() {
+    const supabase = getSupabase();
+    const { data: auth } = await supabase.auth.getUser();
+    const user_id = auth.user?.id;
+    if (!user_id) return;
+    const name = manualCardName === "Outro" ? customCardName.trim() : manualCardName;
+    if (!name || !manualAmount) return;
+    await supabase.from("monthly_card_totals").upsert({
+      user_id,
+      card_name: name,
+      amount_total: Number(manualAmount),
+      statement_month: month
+    });
+    setManualCardName("");
+    setCustomCardName("");
+    setManualAmount("");
+  }
 
   const transactions = useMemo(() => {
     const list = (data?.transactions || []) as CardTransaction[];
@@ -88,6 +122,7 @@ export default function CardExpensesPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/import">
           <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
@@ -110,7 +145,7 @@ export default function CardExpensesPage() {
           </Button>
         </div>
       </div>
-      {isLoading && <div>Carregando...</div>}
+      
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,14 +153,17 @@ export default function CardExpensesPage() {
             <h2 className="text-lg font-semibold text-foreground">
               Lançamentos do cartão
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Edite as categorias diretamente nos itens.
-            </p>
+            {cardMode === "import" ? (
+              <p className="text-sm text-muted-foreground">Edite as categorias diretamente nos itens.</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Preferência atual: apenas o valor total do cartão. A categorização está desativada.</p>
+            )}
           </div>
           {selectedCategory && (
             <Badge className="text-foreground">{selectedCategory}</Badge>
           )}
         </div>
+        {cardMode === "import" && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
             <input
@@ -156,6 +194,44 @@ export default function CardExpensesPage() {
             </Button>
           )}
         </div>
+        )}
+        {cardMode === "total_only" && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+            <div>
+              <label className="text-sm text-muted-foreground">Mês da fatura</label>
+              <Input type="month" value={month} onChange={(e) => setSelectedDate(new Date(e.target.value + "-01"))} />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Cartão</label>
+              <select
+                value={manualCardName}
+                onChange={(e) => setManualCardName(e.target.value)}
+                className="w-full rounded-lg bg-background-subtle text-foreground px-3.5 py-2.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+              >
+                <option value="">Selecione</option>
+                {BANK_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              {manualCardName === "Outro" && (
+                <Input className="mt-2" value={customCardName} onChange={(e) => setCustomCardName(e.target.value)} placeholder="Nome do cartão" />
+              )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm text-muted-foreground">Valor total da fatura</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+              </div>
+            </div>
+            <div className="sm:col-span-4">
+              <Button onClick={saveManualTotal}>Salvar valor do cartão</Button>
+            </div>
+          </div>
+        )}
+        {cardMode === "import" ? (
         <div className="mt-4 space-y-2 text-sm">
           {filteredTransactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
           {visibleTransactions.map((t: CardTransaction) => (
@@ -220,6 +296,11 @@ export default function CardExpensesPage() {
             </div>
           ))}
         </div>
+        ) : (
+          <div className="mt-4 text-sm text-muted-foreground">
+            O valor total informado do cartão será considerado nas despesas. Para detalhar categorias, mude para “Importar fatura (CSV)” em Preferências.
+          </div>
+        )}
       </Card>
     </main>
   );

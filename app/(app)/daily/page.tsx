@@ -10,12 +10,13 @@ import { IncomeRule, BillRule, CardStatement, VariableExpense } from "../../../l
 import { AppHeader } from "../../../components/AppHeader"
 import { formatMonth, daysInMonth, formatMonthTitle } from "../../../utils/date"
 import { CurrencyText } from "../../../components/format/CurrencyText"
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
 
 export default function DailyDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [includeCarry, setIncludeCarry] = useState(true)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
     refetchInterval: 15000,
@@ -99,6 +100,7 @@ export default function DailyDashboard() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Diário — ${formatMonthTitle(month)}`} />
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
@@ -108,7 +110,7 @@ export default function DailyDashboard() {
         </Button>
       </div>
 
-      {isLoading && <div>Carregando...</div>}
+      
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
           <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />

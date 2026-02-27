@@ -9,6 +9,8 @@ import { BillRule, IncomeRule, InvestmentSettings, VariableExpense, MonthlyIncom
 import { AppHeader } from "../../../components/AppHeader"
 import { CurrencyText } from "../../../components/format/CurrencyText"
 import { formatMonth, daysInMonth } from "../../../utils/date"
+import { MoneyInput } from "../../../components/form/MoneyInput"
+import { DayOfMonthInput } from "../../../components/form/DayOfMonthInput"
 
 type NotificationSettings = {
   user_id: string
@@ -23,6 +25,7 @@ export default function SettingsPage() {
   const [billRules, setBillRules] = useState<BillRule[]>([])
   const [settings, setSettings] = useState<NotificationSettings | null>(null)
   const [investment, setInvestment] = useState<InvestmentSettings | null>(null)
+  const [fetchingInit, setFetchingInit] = useState(false)
 
   const [incDesc, setIncDesc] = useState("")
   const [incAmount, setIncAmount] = useState("")
@@ -57,6 +60,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadAll() {
+      setFetchingInit(true)
       const supabase = getSupabase()
       const { data: incs } = await supabase.from("income_rules").select("*").order("day_of_month", { ascending: true })
       const { data: bills } = await supabase.from("bill_rules").select("*").order("day_of_month", { ascending: true })
@@ -74,6 +78,7 @@ export default function SettingsPage() {
         setInvestment(invest as InvestmentSettings)
         setInvestmentPercentage(String((invest as InvestmentSettings).monthly_percentage ?? 0))
       }
+      setFetchingInit(false)
     }
     loadAll()
   }, [])
@@ -84,13 +89,16 @@ export default function SettingsPage() {
   })()
   const dayOptions = Array.from({ length: daysCount }, (_, i) => i + 1)
 
+  const [fetchingMonth, setFetchingMonth] = useState(false)
   useEffect(() => {
     async function loadMonthData() {
+      setFetchingMonth(true)
       const supabase = getSupabase()
       const { data: mi } = await supabase.from("monthly_incomes").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
       const { data: ve } = await supabase.from("variable_expenses").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
       setMonthlyIncomes((mi || []) as MonthlyIncome[])
       setVariableExpenses((ve || []) as VariableExpense[])
+      setFetchingMonth(false)
     }
     loadMonthData()
   }, [selectedMonth])
@@ -295,6 +303,18 @@ export default function SettingsPage() {
 
   return (
     <main className="relative min-h-screen">
+      {(fetchingInit || fetchingMonth) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
+          <div className="relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 text-card-foreground shadow-[0_10px_24px_rgba(6,10,18,0.28)]">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
+              <div className="text-sm font-medium">Atualizando dados...</div>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">Isso leva apenas alguns instantes.</div>
+          </div>
+        </div>
+      )}
       <div className="md:hidden p-4 space-y-6">
         <AppHeader title="Configurações" />
         <Card>
@@ -366,11 +386,8 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$ </span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
-                </div>
-                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
+                <MoneyInput value={incAmount} onChange={(e) => setIncAmount(e.target.value)} />
+                <DayOfMonthInput id="m-inc-day" month={selectedMonth} value={incDay} onChange={(e) => setIncDay(e.target.value)} />
               </div>
               <datalist id="days-options">
                 {dayOptions.map((d) => (
@@ -399,11 +416,8 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
-                </div>
-                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
+                <MoneyInput value={billAmount} onChange={(e) => setBillAmount(e.target.value)} />
+                <DayOfMonthInput id="m-bill-day" month={selectedMonth} value={billDay} onChange={(e) => setBillDay(e.target.value)} />
                 <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -428,11 +442,8 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
-                </div>
-                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                <MoneyInput value={miAmount} onChange={(e) => setMiAmount(e.target.value)} />
+                <DayOfMonthInput id="m-mi-day" month={selectedMonth} value={miDay} onChange={(e) => setMiDay(e.target.value)} />
                 <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
@@ -461,11 +472,8 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
-                </div>
-                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                <MoneyInput value={veAmount} onChange={(e) => setVeAmount(e.target.value)} />
+                <DayOfMonthInput id="m-ve-day" month={selectedMonth} value={veDay} onChange={(e) => setVeDay(e.target.value)} />
                 <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
@@ -576,8 +584,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
+                  <MoneyInput value={incAmount} onChange={(e) => setIncAmount(e.target.value)} />
+                  <DayOfMonthInput id="d-inc-day" month={selectedMonth} value={incDay} onChange={(e) => setIncDay(e.target.value)} />
                 </div>
                 <Button className="mt-3" onClick={addIncome} disabled={loading}>
                   {loading ? "Salvando..." : "Adicionar receita"}
@@ -601,8 +609,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
+                  <MoneyInput value={billAmount} onChange={(e) => setBillAmount(e.target.value)} />
+                  <DayOfMonthInput id="d-bill-day" month={selectedMonth} value={billDay} onChange={(e) => setBillDay(e.target.value)} />
                   <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -627,8 +635,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                  <MoneyInput value={miAmount} onChange={(e) => setMiAmount(e.target.value)} />
+                  <DayOfMonthInput id="d-mi-day" month={selectedMonth} value={miDay} onChange={(e) => setMiDay(e.target.value)} />
                   <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
@@ -653,8 +661,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
-                  <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" />
-                  <Input value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                  <MoneyInput value={veAmount} onChange={(e) => setVeAmount(e.target.value)} />
+                  <DayOfMonthInput id="d-ve-day" month={selectedMonth} value={veDay} onChange={(e) => setVeDay(e.target.value)} />
                   <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
                 </div>
                 <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>

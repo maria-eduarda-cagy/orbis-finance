@@ -13,6 +13,7 @@ import { formatMonth, formatMonthTitle } from "../../../utils/date"
 import { normalizeCategory } from "../../../utils/category"
 import { CurrencyText } from "../../../components/format/CurrencyText"
 import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
+import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
 
 export default function MonthlyDashboard() {
   const { hidden } = useNumberVisibility()
@@ -23,7 +24,7 @@ export default function MonthlyDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
     refetchInterval: 15000,
@@ -164,6 +165,7 @@ export default function MonthlyDashboard() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Mensal — ${formatMonthTitle(month)}`} />
+      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap gap-2">
         <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => addMonth(-1)}>
           Mês anterior
@@ -375,7 +377,7 @@ export default function MonthlyDashboard() {
         </div>
       </Card>
 
-      {isLoading && <div>Carregando...</div>}
+      
     </main>
   )
 }
