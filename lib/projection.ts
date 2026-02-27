@@ -1,5 +1,5 @@
 import { getSupabase } from "./supabaseClient"
-import { BillRule, CardStatement, IncomeRule, CardTransaction, VariableExpense, BankTransfer } from "./types"
+import { BillRule, CardStatement, IncomeRule, CardTransaction, VariableExpense, BankTransfer, MonthlyIncome } from "./types"
 
 export async function fetchMonthData(month: string) {
   try {
@@ -51,6 +51,10 @@ export async function fetchMonthData(month: string) {
       .from("variable_expenses")
       .select("*")
       .eq("month", month)
+    const { data: monthlyIncomes } = await supabase
+      .from("monthly_incomes")
+      .select("*")
+      .eq("month", month)
     const { data: investmentSettings } = await supabase
       .from("user_investment_settings")
       .select("monthly_percentage")
@@ -66,10 +70,11 @@ export async function fetchMonthData(month: string) {
       prevTransfers: (prevTransfers || []) as { amount: number; direction: "entrada" | "saida" }[],
       userCreatedAt: createdAt,
       investmentPercentage: Number(investmentSettings?.monthly_percentage || 0),
-      variableExpenses: (variableExpenses || []) as VariableExpense[]
+      variableExpenses: (variableExpenses || []) as VariableExpense[],
+      monthlyIncomes: (monthlyIncomes || []) as MonthlyIncome[]
     }
   } catch {
-    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], transfers: [], prevTransfers: [], userCreatedAt: null, investmentPercentage: 0, variableExpenses: [] }
+    return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], transfers: [], prevTransfers: [], userCreatedAt: null, investmentPercentage: 0, variableExpenses: [], monthlyIncomes: [] }
   }
 }
 

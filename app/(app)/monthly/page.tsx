@@ -53,7 +53,11 @@ export default function MonthlyDashboard() {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
-    return computeMonthlyProjection(incomes, bills, statements, 0, investmentMonthly + variableExpensesTotal)
+    const monthlyIncomesTotal = ((data as { monthlyIncomes?: Array<{ amount: number }> })?.monthlyIncomes || []).reduce(
+      (s: number, r: { amount: number }) => s + Number(r.amount || 0),
+      0
+    )
+    return computeMonthlyProjection(incomes, bills, statements, monthlyIncomesTotal, investmentMonthly + variableExpensesTotal)
   }, [data, investmentMonthly, variableExpensesTotal])
 
   const prevNet = useMemo(() => {

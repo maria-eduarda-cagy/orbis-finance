@@ -55,14 +55,27 @@ export default function DailyDashboard() {
     return buildVariableExpenseMap(list, month)
   }, [data, month])
 
+  const monthlyIncomeMap = useMemo(() => {
+    const list = ((data as { monthlyIncomes?: Array<{ day_of_month: number; amount: number }> })?.monthlyIncomes || []) as Array<{
+      day_of_month: number
+      amount: number
+    }>
+    const map = new Map<number, number>()
+    for (const r of list) {
+      const d = Number(r.day_of_month || 0)
+      map.set(d, (map.get(d) || 0) + Number(r.amount || 0))
+    }
+    return map
+  }, [data])
+
   const balances = useMemo<{ date: Date; balance: number; allowance: number }[]>(() => {
     const incomes = data?.incomes || []
     const bills = data?.bills || []
     const statements = data?.statements || []
     const transfers = (data as { transfers?: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] })?.transfers || []
     const initial = (includeCarry ? startBalance : 0) - investmentMonthly
-    return projectDailyBalances(selectedDate, incomes, bills, statements, transfers, variableExpenseMap, initial)
-  }, [data, selectedDate, startBalance, includeCarry, investmentMonthly, variableExpenseMap])
+    return projectDailyBalances(selectedDate, incomes, bills, statements, transfers, monthlyIncomeMap, variableExpenseMap, initial)
+  }, [data, selectedDate, startBalance, includeCarry, investmentMonthly, variableExpenseMap, monthlyIncomeMap])
 
   function addMonth(delta: number) {
     const d = new Date(selectedDate)
@@ -107,7 +120,7 @@ export default function DailyDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {orderedDays.map((d) => {
           const isToday = d.toDateString() === todayDateKey && isSameMonthAsToday
-          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], (data as { transfers?: any[] })?.transfers || [], variableExpenseMap)
+          const items = itemsForDay(d, data?.incomes || [], data?.bills || [], data?.statements || [], (data as { transfers?: any[] })?.transfers || [], monthlyIncomeMap, variableExpenseMap)
           const bal = balances.find((b: { date: Date; balance: number; allowance: number }) => b.date.toDateString() === d.toDateString())
           return (
           <Card
@@ -123,7 +136,7 @@ export default function DailyDashboard() {
               </div>
               </div>
               <div className="mt-2 text-sm text-muted-foreground space-y-1">
-              <div>Receitas: <CurrencyText value={items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0)} /></div>
+              <div>Receitas: <CurrencyText value={items.incs.reduce((s: number, r: IncomeRule) => s + r.amount, 0) + (monthlyIncomeMap.get(d.getDate()) || 0)} /></div>
               <div>Despesas: <CurrencyText value={items.bls.reduce((s: number, r: BillRule) => s + r.amount, 0)} /></div>
               <div>Cartões: <CurrencyText value={items.sts.reduce((s: number, r: CardStatement) => s + r.amount_total, 0)} /></div>
               <div>Transferências: <CurrencyText value={items.tfs.reduce((s: number, r: { amount: number; direction: "entrada" | "saida" }) => s + (r.direction === "entrada" ? r.amount : -r.amount), 0)} /></div>
