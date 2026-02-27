@@ -1,6 +1,6 @@
 "use client"
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
@@ -27,6 +27,7 @@ export default function MonthlyDashboard() {
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,

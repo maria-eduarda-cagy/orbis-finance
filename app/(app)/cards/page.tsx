@@ -34,6 +34,7 @@ export default function CardExpensesPage() {
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,

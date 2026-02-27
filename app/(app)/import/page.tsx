@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { getSupabase } from "../../../lib/supabaseClient"
 import { Button } from "../../../components/ui/button"
 import { Card } from "../../../components/ui/card"
@@ -100,21 +100,23 @@ export default function ImportPage() {
   const [bankName, setBankName] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [batches, setBatches] = useState<ImportBatch[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const effectiveBank = bankName.trim()
 
-  useEffect(() => {
-    async function loadBatches() {
+  const { data: batchesData, isLoading: isLoadingBatches, isFetching: isFetchingBatches } = useQuery({
+    queryKey: ["import-batches"],
+    queryFn: async () => {
       const supabase = getSupabase()
-      const { data } = await supabase
-        .from("import_batches")
-        .select("*")
-        .order("created_at", { ascending: false })
-      setBatches((data || []) as ImportBatch[])
-    }
-    loadBatches()
-  }, [])
+      const { data } = await supabase.from("import_batches").select("*").order("created_at", { ascending: false })
+      return (data || []) as ImportBatch[]
+    },
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true
+  })
+  const batches = batchesData || []
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     setMessage(null)
@@ -250,7 +252,7 @@ export default function ImportPage() {
     }
     setLoading(false)
     setMessage("Importação concluída")
-    if (batch) setBatches((prev) => [batch as ImportBatch, ...prev])
+    await queryClient.invalidateQueries({ queryKey: ["import-batches"] })
     router.back()
   }
 
@@ -260,7 +262,7 @@ export default function ImportPage() {
     await supabase.from("card_transactions").delete().eq("import_batch_id", batch.id)
     await supabase.from("card_statements").delete().eq("import_batch_id", batch.id)
     await supabase.from("import_batches").delete().eq("id", batch.id)
-    setBatches((prev) => prev.filter((b) => b.id !== batch.id))
+    await queryClient.invalidateQueries({ queryKey: ["import-batches"] })
     setDeleteId(null)
     queryClient.invalidateQueries({ queryKey: ["month"] })
   }
@@ -269,6 +271,9 @@ export default function ImportPage() {
 
   return (
     <main className="relative min-h-screen">
+      {((!batchesData && isLoadingBatches) || (isFetchingBatches && batches.length === 0)) && (
+        <UpdatingOverlay label="Atualizando dados..." />
+      )}
       <div className="md:hidden p-4 space-y-6">
         <AppHeader title="Importar faturas CSV" />
         <Card>

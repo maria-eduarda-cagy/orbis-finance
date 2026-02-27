@@ -1,6 +1,6 @@
 "use client"
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { AppHeader } from "../../../components/AppHeader"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
@@ -70,6 +70,7 @@ export default function AccountsPage() {
         .order("transfer_date", { ascending: true })
       return (data || []) as BankTransfer[]
     },
+    placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
