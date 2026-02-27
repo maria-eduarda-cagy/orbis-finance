@@ -207,7 +207,7 @@ export default function CardExpensesPage() {
                 className="w-full rounded-lg bg-background-subtle text-foreground px-3.5 py-2.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               >
                 <option value="">Selecione</option>
-                {BANK_OPTIONS.concat(["Outro"]).map((b) => (
+                {BANK_OPTIONS.map((b) => (
                   <option key={b} value={b}>
                     {b}
                   </option>
