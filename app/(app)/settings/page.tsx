@@ -389,6 +389,11 @@ export default function SettingsPage() {
                 <MoneyInput value={incAmount} onChange={(e) => setIncAmount(e.target.value)} />
                 <DayOfMonthInput id="m-inc-day" month={selectedMonth} value={incDay} onChange={(e) => setIncDay(e.target.value)} />
               </div>
+              <datalist id="days-options">
+                {dayOptions.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
               <Button className="mt-3" onClick={addIncome} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar receita"}
               </Button>
