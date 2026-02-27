@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Menu, Settings } from "lucide-react"
+import { Menu, Settings, CalendarRange, CalendarDays, CreditCard, Landmark, Sliders } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet"
 import { NavLink } from "./NavLink"
 import { ThemeToggle } from "../theme/ThemeToggle"
@@ -47,6 +47,11 @@ export function MobileNav({ userName, userEmail }: MobileNavProps) {
             <ThemeToggle />
           </div>
           <div className="mt-6 space-y-2">
+            <NavLink href="/monthly" label="Dashboard Mensal" icon={<CalendarRange size={18} />} onClick={() => setOpen(false)} />
+            <NavLink href="/daily" label="Dashboard Diário" icon={<CalendarDays size={18} />} onClick={() => setOpen(false)} />
+            <NavLink href="/accounts" label="Conta Bancária" icon={<Landmark size={18} />} onClick={() => setOpen(false)} />
+            <NavLink href="/cards" label="Gastos do Cartão" icon={<CreditCard size={18} />} onClick={() => setOpen(false)} />
+            <NavLink href="/preferences" label="Preferências" icon={<Sliders size={18} />} onClick={() => setOpen(false)} />
             <NavLink href="/settings" label="Configurações" icon={<Settings size={18} />} onClick={() => setOpen(false)} />
           </div>
         </SheetContent>

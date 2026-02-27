@@ -15,6 +15,7 @@ export function itemsForDay(
   bills: BillRule[],
   statements: CardStatement[],
   transfers: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] = [],
+  monthlyIncomeMap?: Map<number, number>,
   variableExpenseMap?: Map<number, number>
 ) {
   const day = date.getDate()
@@ -23,7 +24,8 @@ export function itemsForDay(
   const bls = bills.filter((r) => r.day_of_month === day)
   const sts = statements.filter((s) => s.statement_month === monthStr && new Date(s.due_date).getDate() === day)
   const tfs = transfers.filter((t) => t.transfer_month === monthStr && new Date(t.transfer_date).getDate() === day)
-  const incomeTotal = incs.reduce((s, r) => s + r.amount, 0)
+  const monthlyIncomeTotal = monthlyIncomeMap?.get(day) || 0
+  const incomeTotal = incs.reduce((s, r) => s + r.amount, 0) + monthlyIncomeTotal
   const transferTotal = tfs.reduce((s, t) => s + (t.direction === "entrada" ? t.amount : -t.amount), 0)
   const variableTotal = variableExpenseMap?.get(day) || 0
   const expenseTotal = bls.reduce((s, r) => s + r.amount, 0) + sts.reduce((s, r) => s + r.amount_total, 0) + variableTotal
@@ -37,19 +39,20 @@ export function projectDailyBalances(
   bills: BillRule[],
   statements: CardStatement[],
   transfers: { amount: number; direction: "entrada" | "saida"; transfer_date: string; transfer_month: string }[] = [],
+  monthlyIncomeMap?: Map<number, number>,
   variableExpenseMap?: Map<number, number>,
   startBalance = 0
 ) {
   const days = buildMonthDays(selectedDate)
   let balance = startBalance
   const monthNet = days.reduce((sum, d) => {
-    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, variableExpenseMap)
+    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, monthlyIncomeMap, variableExpenseMap)
     return sum + netDelta
   }, 0)
   const monthEndBalance = startBalance + monthNet
   const perDayAllowance = monthEndBalance > 0 ? monthEndBalance / days.length : 0
   const result = days.map((d) => {
-    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, variableExpenseMap)
+    const { netDelta } = itemsForDay(d, incomes, bills, statements, transfers, monthlyIncomeMap, variableExpenseMap)
     balance += netDelta
     const dayIndex = d.getDate()
     const allowance = perDayAllowance > 0 ? Number((perDayAllowance * dayIndex).toFixed(2)) : 0

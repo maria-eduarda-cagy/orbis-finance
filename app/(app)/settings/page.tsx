@@ -5,9 +5,10 @@ import { getSupabase } from "../../../lib/supabaseClient"
 import { Button } from "../../../components/ui/button"
 import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
-import { BillRule, IncomeRule, InvestmentSettings } from "../../../lib/types"
+import { BillRule, IncomeRule, InvestmentSettings, VariableExpense, MonthlyIncome } from "../../../lib/types"
 import { AppHeader } from "../../../components/AppHeader"
 import { CurrencyText } from "../../../components/format/CurrencyText"
+import { formatMonth, daysInMonth } from "../../../utils/date"
 
 type NotificationSettings = {
   user_id: string
@@ -39,6 +40,20 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => formatMonth(new Date()))
+
+  const [monthlyIncomes, setMonthlyIncomes] = useState<MonthlyIncome[]>([])
+  const [variableExpenses, setVariableExpenses] = useState<VariableExpense[]>([])
+
+  const [miDesc, setMiDesc] = useState("")
+  const [miAmount, setMiAmount] = useState("")
+  const [miDay, setMiDay] = useState("")
+  const [miCategory, setMiCategory] = useState("")
+
+  const [veDesc, setVeDesc] = useState("")
+  const [veAmount, setVeAmount] = useState("")
+  const [veDay, setVeDay] = useState("")
+  const [veCategory, setVeCategory] = useState("")
 
   useEffect(() => {
     async function loadAll() {
@@ -62,6 +77,109 @@ export default function SettingsPage() {
     }
     loadAll()
   }, [])
+
+  const daysCount = (() => {
+    const d = new Date(`${selectedMonth}-01`)
+    return Number.isFinite(d.getTime()) ? daysInMonth(d) : 31
+  })()
+  const dayOptions = Array.from({ length: daysCount }, (_, i) => i + 1)
+
+  useEffect(() => {
+    async function loadMonthData() {
+      const supabase = getSupabase()
+      const { data: mi } = await supabase.from("monthly_incomes").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
+      const { data: ve } = await supabase.from("variable_expenses").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
+      setMonthlyIncomes((mi || []) as MonthlyIncome[])
+      setVariableExpenses((ve || []) as VariableExpense[])
+    }
+    loadMonthData()
+  }, [selectedMonth])
+
+  async function getUserId() {
+    const supabase = getSupabase()
+    const { data } = await supabase.auth.getUser()
+    return data.user?.id || null
+  }
+
+  async function addMonthlyIncome() {
+    setMessage(null)
+    const amount = Number(miAmount)
+    const day = Number(miDay)
+    if (!miDesc || isNaN(amount) || isNaN(day)) {
+      setMessage("Preencha descrição, valor e dia.")
+      return
+    }
+    setLoading(true)
+    const supabase = getSupabase()
+    const userId = await getUserId()
+    if (!userId) {
+      setLoading(false)
+      setMessage("Usuário não autenticado.")
+      return
+    }
+    const { data, error } = await supabase
+      .from("monthly_incomes")
+      .insert({ user_id: userId, description: miDesc, amount, day_of_month: day, month: selectedMonth, category: miCategory || null })
+      .select()
+      .single()
+    if (error) {
+      setLoading(false)
+      setMessage("Falha ao salvar a receita do mês.")
+      return
+    }
+    if (data) setMonthlyIncomes((prev) => [...prev, data as MonthlyIncome])
+    setMiDesc("")
+    setMiAmount("")
+    setMiDay("")
+    setMiCategory("")
+    setLoading(false)
+  }
+
+  async function deleteMonthlyIncome(id: string) {
+    const supabase = getSupabase()
+    await supabase.from("monthly_incomes").delete().eq("id", id)
+    setMonthlyIncomes((prev) => prev.filter((r) => r.id !== id))
+  }
+
+  async function addVariableExpense() {
+    setMessage(null)
+    const amount = Number(veAmount)
+    const day = Number(veDay)
+    if (!veDesc || isNaN(amount) || isNaN(day)) {
+      setMessage("Preencha descrição, valor e dia.")
+      return
+    }
+    setLoading(true)
+    const supabase = getSupabase()
+    const userId = await getUserId()
+    if (!userId) {
+      setLoading(false)
+      setMessage("Usuário não autenticado.")
+      return
+    }
+    const { data, error } = await supabase
+      .from("variable_expenses")
+      .insert({ user_id: userId, description: veDesc, amount, day_of_month: day, month: selectedMonth, category: veCategory || null })
+      .select()
+      .single()
+    if (error) {
+      setLoading(false)
+      setMessage("Falha ao salvar a despesa variável.")
+      return
+    }
+    if (data) setVariableExpenses((prev) => [...prev, data as VariableExpense])
+    setVeDesc("")
+    setVeAmount("")
+    setVeDay("")
+    setVeCategory("")
+    setLoading(false)
+  }
+
+  async function deleteVariableExpense(id: string) {
+    const supabase = getSupabase()
+    await supabase.from("variable_expenses").delete().eq("id", id)
+    setVariableExpenses((prev) => prev.filter((r) => r.id !== id))
+  }
 
   async function addIncome() {
     setMessage(null)
@@ -188,6 +306,10 @@ export default function SettingsPage() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6">
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-muted-foreground">Mês</label>
+              <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+            </div>
             
             {/* <Card>
               <div>
@@ -244,9 +366,17 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" />
-                <Input value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$ </span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={incDay} onChange={(e) => setIncDay(e.target.value)} placeholder="Dia do mês" />
               </div>
+              <datalist id="days-options">
+                {dayOptions.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
               <Button className="mt-3" onClick={addIncome} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar receita"}
               </Button>
@@ -269,8 +399,11 @@ export default function SettingsPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input value={billDesc} onChange={(e) => setBillDesc(e.target.value)} placeholder="Descrição" />
-                <Input value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" />
-                <Input value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={billDay} onChange={(e) => setBillDay(e.target.value)} placeholder="Dia do mês" />
                 <Input value={billCategory} onChange={(e) => setBillCategory(e.target.value)} placeholder="Categoria (opcional)" />
               </div>
               <Button className="mt-3" onClick={addBill} disabled={loading}>
@@ -287,6 +420,72 @@ export default function SettingsPage() {
                 ))}
               </div>
             </Card>
+
+            <Card>
+              <div>
+                <h3 className="text-base font-semibold">Receita mensal (pontual)</h3>
+                <p className="text-sm text-muted-foreground">Entradas específicas deste mês.</p>
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
+              </div>
+              <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
+                {loading ? "Salvando..." : "Adicionar receita do mês"}
+              </Button>
+              <div className="mt-4">
+                <div className="text-sm font-semibold mb-2">Histórico do mês</div>
+                <div className="space-y-2">
+                  {monthlyIncomes.length === 0 && <div className="text-sm text-muted-foreground">Sem receitas pontuais neste mês.</div>}
+                {monthlyIncomes.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-sm">
+                    <div>{r.description || "Receita"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
+                    <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteMonthlyIncome(r.id)}>
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div>
+                <h3 className="text-base font-semibold">Despesa variável</h3>
+                <p className="text-sm text-muted-foreground">Despesas específicas deste mês.</p>
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+                </div>
+                <Input type="number" min="1" max={daysCount} step="1" list="days-options" value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
+              </div>
+              <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
+                {loading ? "Salvando..." : "Adicionar despesa variável"}
+              </Button>
+              <div className="mt-4">
+                <div className="text-sm font-semibold mb-2">Histórico do mês</div>
+                <div className="space-y-2">
+                  {variableExpenses.length === 0 && <div className="text-sm text-muted-foreground">Sem despesas variáveis neste mês.</div>}
+                {variableExpenses.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-sm">
+                    <div>{r.description || "Despesa"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
+                    <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteVariableExpense(r.id)}>
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+                </div>
+              </div>
+            </Card>
           </div>
 
           {message && <div className="mt-4 text-success text-sm">{message}</div>}
@@ -301,7 +500,7 @@ export default function SettingsPage() {
         </div>
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => router.back()} />
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <Card className="w-full max-w-4xl">
+          <Card className="w-full max-w-4xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Configurações</h2>
@@ -313,6 +512,15 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-6">
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-muted-foreground">Mês</label>
+                <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+              </div>
+              <datalist id="days-options">
+                {dayOptions.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
               {/* <Card>
                 <div>
                   <h3 className="text-base font-semibold">Notificações (Telegram)</h3>
@@ -405,6 +613,58 @@ export default function SettingsPage() {
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
                       <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
+                        Remover
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <div>
+                  <h3 className="text-base font-semibold">Receita mensal (pontual)</h3>
+                  <p className="text-sm text-muted-foreground">Entradas específicas deste mês.</p>
+                </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <Input value={miDesc} onChange={(e) => setMiDesc(e.target.value)} placeholder="Descrição" />
+                  <Input value={miAmount} onChange={(e) => setMiAmount(e.target.value)} placeholder="Valor" />
+                  <Input value={miDay} onChange={(e) => setMiDay(e.target.value)} placeholder="Dia do mês" />
+                  <Input value={miCategory} onChange={(e) => setMiCategory(e.target.value)} placeholder="Categoria (opcional)" />
+                </div>
+                <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
+                  {loading ? "Salvando..." : "Adicionar receita do mês"}
+                </Button>
+                <div className="mt-4 space-y-2">
+                  {monthlyIncomes.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between text-sm">
+                      <div>{r.description || "Receita"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
+                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteMonthlyIncome(r.id)}>
+                        Remover
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <div>
+                  <h3 className="text-base font-semibold">Despesa variável</h3>
+                  <p className="text-sm text-muted-foreground">Despesas específicas deste mês.</p>
+                </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <Input value={veDesc} onChange={(e) => setVeDesc(e.target.value)} placeholder="Descrição" />
+                  <Input value={veAmount} onChange={(e) => setVeAmount(e.target.value)} placeholder="Valor" />
+                  <Input value={veDay} onChange={(e) => setVeDay(e.target.value)} placeholder="Dia do mês" />
+                  <Input value={veCategory} onChange={(e) => setVeCategory(e.target.value)} placeholder="Categoria (opcional)" />
+                </div>
+                <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
+                  {loading ? "Salvando..." : "Adicionar despesa variável"}
+                </Button>
+                <div className="mt-4 space-y-2">
+                  {variableExpenses.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between text-sm">
+                      <div>{r.description || "Despesa"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
+                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteVariableExpense(r.id)}>
                         Remover
                       </Button>
                     </div>

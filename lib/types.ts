@@ -68,6 +68,16 @@ export type VariableExpense = {
   description?: string | null
 }
 
+export type MonthlyIncome = {
+  id: string
+  user_id: string
+  month: string
+  day_of_month: number
+  amount: number
+  category: string | null
+  description?: string | null
+}
+
 export type BankTransfer = {
   id: string
   user_id: string
