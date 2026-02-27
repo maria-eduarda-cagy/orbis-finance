@@ -410,7 +410,10 @@ export default function SettingsPage() {
               <Button className="mt-3" onClick={addMonthlyIncome} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar receita do mês"}
               </Button>
-              <div className="mt-4 space-y-2">
+              <div className="mt-4">
+                <div className="text-sm font-semibold mb-2">Histórico do mês</div>
+                <div className="space-y-2">
+                  {monthlyIncomes.length === 0 && <div className="text-sm text-muted-foreground">Sem receitas pontuais neste mês.</div>}
                 {monthlyIncomes.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
                     <div>{r.description || "Receita"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
@@ -419,6 +422,7 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 ))}
+                </div>
               </div>
             </Card>
 
@@ -439,7 +443,10 @@ export default function SettingsPage() {
               <Button className="mt-3" onClick={addVariableExpense} disabled={loading}>
                 {loading ? "Salvando..." : "Adicionar despesa variável"}
               </Button>
-              <div className="mt-4 space-y-2">
+              <div className="mt-4">
+                <div className="text-sm font-semibold mb-2">Histórico do mês</div>
+                <div className="space-y-2">
+                  {variableExpenses.length === 0 && <div className="text-sm text-muted-foreground">Sem despesas variáveis neste mês.</div>}
                 {variableExpenses.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm">
                     <div>{r.description || "Despesa"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
@@ -448,6 +455,7 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 ))}
+                </div>
               </div>
             </Card>
           </div>
