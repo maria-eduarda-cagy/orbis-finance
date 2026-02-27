@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { fetchMonthData } from "../../../lib/projection";
 import { Card } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";

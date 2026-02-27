@@ -8,6 +8,7 @@ import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
 import { AppHeader } from "../../../components/AppHeader"
 import { ConfirmButton } from "../../../components/ui/ConfirmButton"
+import { UpdatingOverlay } from "../../../components/ui/loader"
 
 type ParsedRow = {
   final_cartao: string
