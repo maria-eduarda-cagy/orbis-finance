@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMonthData } from "../../../lib/projection";
 import { Card } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { AppHeader } from "../../../components/AppHeader";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { CardTransaction } from "../../../lib/types";
 import { getSupabase } from "../../../lib/supabaseClient";
 import { formatMonth, formatMonthTitle } from "../../../utils/date";
+import { BANK_OPTIONS } from "../../../utils/constants";
 import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
 import { CurrencyText } from "../../../components/format/CurrencyText";
@@ -17,6 +19,9 @@ import { CurrencyText } from "../../../components/format/CurrencyText";
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [cardMode, setCardMode] = useState<"import" | "total_only">("import");
+  const [manualCardName, setManualCardName] = useState("");
+  const [customCardName, setCustomCardName] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
   const [hideNegative, setHideNegative] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -43,6 +48,24 @@ export default function CardExpensesPage() {
     }
     loadMode();
   }, []);
+
+  async function saveManualTotal() {
+    const supabase = getSupabase();
+    const { data: auth } = await supabase.auth.getUser();
+    const user_id = auth.user?.id;
+    if (!user_id) return;
+    const name = manualCardName === "Outro" ? customCardName.trim() : manualCardName;
+    if (!name || !manualAmount) return;
+    await supabase.from("monthly_card_totals").upsert({
+      user_id,
+      card_name: name,
+      amount_total: Number(manualAmount),
+      statement_month: month
+    });
+    setManualCardName("");
+    setCustomCardName("");
+    setManualAmount("");
+  }
 
   const transactions = useMemo(() => {
     const list = (data?.transactions || []) as CardTransaction[];
@@ -169,6 +192,42 @@ export default function CardExpensesPage() {
             </Button>
           )}
         </div>
+        )}
+        {cardMode === "total_only" && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+            <div>
+              <label className="text-sm text-muted-foreground">Mês da fatura</label>
+              <Input type="month" value={month} onChange={(e) => setSelectedDate(new Date(e.target.value + "-01"))} />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Cartão</label>
+              <select
+                value={manualCardName}
+                onChange={(e) => setManualCardName(e.target.value)}
+                className="w-full rounded-lg bg-background-subtle text-foreground px-3.5 py-2.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+              >
+                <option value="">Selecione</option>
+                {BANK_OPTIONS.concat(["Outro"]).map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              {manualCardName === "Outro" && (
+                <Input className="mt-2" value={customCardName} onChange={(e) => setCustomCardName(e.target.value)} placeholder="Nome do cartão" />
+              )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm text-muted-foreground">Valor total da fatura</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="Valor" className="pl-8" />
+              </div>
+            </div>
+            <div className="sm:col-span-4">
+              <Button onClick={saveManualTotal}>Salvar valor do cartão</Button>
+            </div>
+          </div>
         )}
         {cardMode === "import" ? (
         <div className="mt-4 space-y-2 text-sm">
