@@ -78,6 +78,20 @@ export type MonthlyIncome = {
   description?: string | null
 }
 
+export type MonthlyCardTotal = {
+  id: string
+  user_id: string
+  card_name: string
+  amount_total: number
+  statement_month: string
+}
+
+export type UserCardMode = {
+  user_id: string
+  mode: "import" | "total_only"
+  updated_at?: string
+}
+
 export type BankTransfer = {
   id: string
   user_id: string

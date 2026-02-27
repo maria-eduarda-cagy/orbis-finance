@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMonthData } from "../../../lib/projection";
 import { Card } from "../../../components/ui/card";
@@ -16,6 +16,7 @@ import { CurrencyText } from "../../../components/format/CurrencyText";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [cardMode, setCardMode] = useState<"import" | "total_only">("import");
   const [hideNegative, setHideNegative] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -33,6 +34,15 @@ export default function CardExpensesPage() {
     refetchOnReconnect: true,
     refetchOnMount: "always",
   });
+
+  useEffect(() => {
+    async function loadMode() {
+      const supabase = getSupabase();
+      const { data } = await supabase.from("user_card_mode").select("mode").single();
+      if (data?.mode === "import" || data?.mode === "total_only") setCardMode(data.mode);
+    }
+    loadMode();
+  }, []);
 
   const transactions = useMemo(() => {
     const list = (data?.transactions || []) as CardTransaction[];
@@ -118,14 +128,17 @@ export default function CardExpensesPage() {
             <h2 className="text-lg font-semibold text-foreground">
               Lançamentos do cartão
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Edite as categorias diretamente nos itens.
-            </p>
+            {cardMode === "import" ? (
+              <p className="text-sm text-muted-foreground">Edite as categorias diretamente nos itens.</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Preferência atual: apenas o valor total do cartão. A categorização está desativada.</p>
+            )}
           </div>
           {selectedCategory && (
             <Badge className="text-foreground">{selectedCategory}</Badge>
           )}
         </div>
+        {cardMode === "import" && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
             <input
@@ -156,6 +169,8 @@ export default function CardExpensesPage() {
             </Button>
           )}
         </div>
+        )}
+        {cardMode === "import" ? (
         <div className="mt-4 space-y-2 text-sm">
           {filteredTransactions.length === 0 && <div className="text-muted-foreground">Sem lançamentos.</div>}
           {visibleTransactions.map((t: CardTransaction) => (
@@ -220,6 +235,11 @@ export default function CardExpensesPage() {
             </div>
           ))}
         </div>
+        ) : (
+          <div className="mt-4 text-sm text-muted-foreground">
+            O valor total informado do cartão será considerado nas despesas. Para detalhar categorias, mude para “Importar fatura (CSV)” em Preferências.
+          </div>
+        )}
       </Card>
     </main>
   );

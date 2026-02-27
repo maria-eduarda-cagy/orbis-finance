@@ -1,5 +1,5 @@
 import { getSupabase } from "./supabaseClient"
-import { BillRule, CardStatement, IncomeRule, CardTransaction, VariableExpense, BankTransfer, MonthlyIncome } from "./types"
+import { BillRule, CardStatement, IncomeRule, CardTransaction, VariableExpense, BankTransfer, MonthlyIncome, MonthlyCardTotal } from "./types"
 
 export async function fetchMonthData(month: string) {
   try {
@@ -59,10 +59,15 @@ export async function fetchMonthData(month: string) {
       .from("user_investment_settings")
       .select("monthly_percentage")
       .single()
+    const { data: manualCardTotals } = await supabase
+      .from("monthly_card_totals")
+      .select("*")
+      .eq("statement_month", month)
+    const unifiedStatements = unifyCardStatements((statements || []) as CardStatement[], (manualCardTotals || []) as MonthlyCardTotal[], month)
     return {
       incomes: (incomes || []) as IncomeRule[],
       bills: (bills || []) as BillRule[],
-      statements: (statements || []) as CardStatement[],
+      statements: unifiedStatements,
       transactions: (transactions || []) as CardTransaction[],
       prevStatements: (prevStatements || []) as CardStatement[],
       prevTransactions: (prevTransactions || []) as { amount_brl: number }[],
@@ -76,6 +81,26 @@ export async function fetchMonthData(month: string) {
   } catch {
     return { incomes: [], bills: [], statements: [], transactions: [], prevStatements: [], prevTransactions: [], transfers: [], prevTransfers: [], userCreatedAt: null, investmentPercentage: 0, variableExpenses: [], monthlyIncomes: [] }
   }
+}
+
+export function unifyCardStatements(statements: CardStatement[], manualTotals: MonthlyCardTotal[], month: string): CardStatement[] {
+  if ((statements?.length || 0) > 0) return statements
+  return (manualTotals || []).map((m) => {
+    const id = `manual-${m.card_name}-${m.statement_month}`
+    // due_date aproximado no final do mês (dia 28) para projeções diárias
+    const due_date = `${month}-28`
+    return {
+      id,
+      user_id: m.user_id,
+      card_id: `manual-${m.card_name}`,
+      statement_month: m.statement_month,
+      due_date,
+      amount_total: Number(m.amount_total),
+      status: "open",
+      paid_at: null,
+      snooze_until: null
+    } as CardStatement
+  })
 }
 
 export function computeMonthlyProjection(
