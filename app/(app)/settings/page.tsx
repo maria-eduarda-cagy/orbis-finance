@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const [billRules, setBillRules] = useState<BillRule[]>([])
   const [settings, setSettings] = useState<NotificationSettings | null>(null)
   const [investment, setInvestment] = useState<InvestmentSettings | null>(null)
+  const [fetchingInit, setFetchingInit] = useState(false)
 
   const [incDesc, setIncDesc] = useState("")
   const [incAmount, setIncAmount] = useState("")
@@ -59,6 +60,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadAll() {
+      setFetchingInit(true)
       const supabase = getSupabase()
       const { data: incs } = await supabase.from("income_rules").select("*").order("day_of_month", { ascending: true })
       const { data: bills } = await supabase.from("bill_rules").select("*").order("day_of_month", { ascending: true })
@@ -76,6 +78,7 @@ export default function SettingsPage() {
         setInvestment(invest as InvestmentSettings)
         setInvestmentPercentage(String((invest as InvestmentSettings).monthly_percentage ?? 0))
       }
+      setFetchingInit(false)
     }
     loadAll()
   }, [])
@@ -86,13 +89,16 @@ export default function SettingsPage() {
   })()
   const dayOptions = Array.from({ length: daysCount }, (_, i) => i + 1)
 
+  const [fetchingMonth, setFetchingMonth] = useState(false)
   useEffect(() => {
     async function loadMonthData() {
+      setFetchingMonth(true)
       const supabase = getSupabase()
       const { data: mi } = await supabase.from("monthly_incomes").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
       const { data: ve } = await supabase.from("variable_expenses").select("*").eq("month", selectedMonth).order("day_of_month", { ascending: true })
       setMonthlyIncomes((mi || []) as MonthlyIncome[])
       setVariableExpenses((ve || []) as VariableExpense[])
+      setFetchingMonth(false)
     }
     loadMonthData()
   }, [selectedMonth])
@@ -297,6 +303,14 @@ export default function SettingsPage() {
 
   return (
     <main className="relative min-h-screen">
+      {(fetchingInit || fetchingMonth) && (
+        <div className="fixed top-3 right-3 z-50">
+          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
+            <span>Atualizando dados...</span>
+          </div>
+        </div>
+      )}
       <div className="md:hidden p-4 space-y-6">
         <AppHeader title="Configurações" />
         <Card>

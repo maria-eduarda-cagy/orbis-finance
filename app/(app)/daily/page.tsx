@@ -108,7 +108,7 @@ export default function DailyDashboard() {
         </div>
       )}
       {data && isFetching && (
-        <div className="text-right">
+        <div className="fixed top-3 right-3 z-50">
           <LoaderInline label="Atualizando dados..." />
         </div>
       )}
