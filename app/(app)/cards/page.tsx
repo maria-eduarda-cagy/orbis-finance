@@ -123,7 +123,7 @@ export default function CardExpensesPage() {
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
-      {(isLoading || isFetching) && <UpdatingOverlay label="Atualizando dados..." />}
+      {(!data && (isLoading || isFetching)) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/import">
           <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
