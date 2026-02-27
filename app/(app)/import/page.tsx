@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/button"
 import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
 import { AppHeader } from "../../../components/AppHeader"
+import { ConfirmButton } from "../../../components/ui/ConfirmButton"
 
 type ParsedRow = {
   final_cartao: string
@@ -351,13 +352,7 @@ export default function ImportPage() {
                     <div className="font-medium">{b.bank} • {b.statement_month}</div>
                     <div className="text-muted-foreground">Vencimento: {b.due_date} • Arquivo: {b.file_name}</div>
                   </div>
-                  <Button
-                    className="bg-secondary text-secondary-foreground  hover:brightness-110"
-                    onClick={() => deleteBatch(b)}
-                    disabled={deleteId === b.id}
-                  >
-                    {deleteId === b.id ? "Removendo..." : "Remover import"}
-                  </Button>
+                  <ConfirmButton onConfirm={() => deleteBatch(b)} label={deleteId === b.id ? "Removendo..." : "Remover import"} />
                 </div>
               ))}
             </div>

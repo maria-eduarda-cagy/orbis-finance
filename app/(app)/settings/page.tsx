@@ -11,6 +11,7 @@ import { CurrencyText } from "../../../components/format/CurrencyText"
 import { formatMonth, daysInMonth } from "../../../utils/date"
 import { MoneyInput } from "../../../components/form/MoneyInput"
 import { DayOfMonthInput } from "../../../components/form/DayOfMonthInput"
+import { ConfirmButton } from "../../../components/ui/ConfirmButton"
 
 type NotificationSettings = {
   user_id: string
@@ -594,9 +595,7 @@ export default function SettingsPage() {
                   {incomeRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteIncome(r.id)}>
-                        Remover
-                      </Button>
+                      <ConfirmButton onConfirm={() => deleteIncome(r.id)} />
                     </div>
                   ))}
                 </div>
@@ -620,9 +619,7 @@ export default function SettingsPage() {
                   {billRules.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteBill(r.id)}>
-                        Remover
-                      </Button>
+                      <ConfirmButton onConfirm={() => deleteBill(r.id)} />
                     </div>
                   ))}
                 </div>
@@ -646,9 +643,7 @@ export default function SettingsPage() {
                   {monthlyIncomes.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description || "Receita"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteMonthlyIncome(r.id)}>
-                        Remover
-                      </Button>
+                      <ConfirmButton onConfirm={() => deleteMonthlyIncome(r.id)} />
                     </div>
                   ))}
                 </div>
@@ -672,9 +667,7 @@ export default function SettingsPage() {
                   {variableExpenses.map((r) => (
                     <div key={r.id} className="flex items-center justify-between text-sm">
                       <div>{r.description || "Despesa"} — <CurrencyText value={r.amount} /> — dia {r.day_of_month}</div>
-                      <Button className="bg-secondary text-secondary-foreground  hover:brightness-110" onClick={() => deleteVariableExpense(r.id)}>
-                        Remover
-                      </Button>
+                      <ConfirmButton onConfirm={() => deleteVariableExpense(r.id)} />
                     </div>
                   ))}
                 </div>
