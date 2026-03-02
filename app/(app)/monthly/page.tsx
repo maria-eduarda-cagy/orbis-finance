@@ -7,7 +7,7 @@ import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import { AppHeader } from "../../../components/AppHeader"
-import { VariableExpense, CardTransaction, BankTransfer } from "../../../lib/types"
+import { VariableExpense, CardTransaction, BankTransfer, CardStatement, MonthlyCardTotal } from "../../../lib/types"
 import { totalVariableExpensesForMonth } from "../../../lib/variableExpenses"
 import { formatMonth, formatMonthTitle } from "../../../utils/date"
 import { normalizeCategory } from "../../../utils/category"
@@ -15,6 +15,7 @@ import { CurrencyText } from "../../../components/format/CurrencyText"
 import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
 import { UpdatingOverlay } from "../../../components/ui/loader"
 import Link from "next/link"
+import { getSupabase } from "../../../lib/supabaseClient"
 
 export default function MonthlyDashboard() {
   const { hidden } = useNumberVisibility()
@@ -226,6 +227,141 @@ export default function MonthlyDashboard() {
     setSelectedDate(d)
   }
 
+  // Checklist de pagamentos de cartões no mês
+  type ChecklistItem = {
+    id: string
+    source: "statement" | "manual"
+    cardName: string
+    due_date: string
+    paid_at: string | null
+    status: "open" | "paid"
+    amount_total: number
+    card_id?: string
+    statement_id?: string
+  }
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([])
+  const [savingStmt, setSavingStmt] = useState<string | null>(null)
+  useEffect(() => {
+    async function loadChecklist() {
+      try {
+        const supabase = getSupabase()
+        const { data: stmts } = await supabase
+          .from("card_statements")
+          .select("*, cards(name)")
+          .eq("statement_month", month)
+          .order("due_date", { ascending: true })
+        const { data: manuals } = await supabase
+          .from("monthly_card_totals")
+          .select("*")
+          .eq("statement_month", month)
+        const stmtItems: ChecklistItem[] = (stmts || []).map((s: any) => ({
+          id: s.id,
+          source: "statement",
+          cardName: s.cards?.name || "Cartão",
+          due_date: s.due_date,
+          paid_at: s.paid_at,
+          status: s.status,
+          amount_total: Number(s.amount_total || 0),
+          card_id: s.card_id,
+          statement_id: s.id
+        }))
+        const stmtCardNames = new Set(stmtItems.map((i) => i.cardName))
+        const manualItems: ChecklistItem[] = (manuals || [])
+          .filter((m: MonthlyCardTotal) => !stmtCardNames.has(m.card_name))
+          .map((m: MonthlyCardTotal) => ({
+            id: `manual-${m.id}`,
+            source: "manual",
+            cardName: m.card_name,
+            due_date: `${m.statement_month}-28`,
+            paid_at: null,
+            status: "open",
+            amount_total: Number(m.amount_total || 0)
+          }))
+        setChecklist([...stmtItems, ...manualItems].sort((a, b) => a.due_date.localeCompare(b.due_date)))
+      } catch {
+        setChecklist([])
+      }
+    }
+    loadChecklist()
+  }, [month])
+
+  async function togglePaid(stmtId: string, checked: boolean) {
+    setSavingStmt(stmtId)
+    try {
+      const supabase = getSupabase()
+      const item = checklist.find((c) => c.id === stmtId)
+      if (!item) return
+      if (item.source === "statement") {
+        const payload = checked
+          ? { status: "paid" as const, paid_at: new Date().toISOString() }
+          : { status: "open" as const, paid_at: null }
+        await supabase.from("card_statements").update(payload).eq("id", item.statement_id || item.id)
+      } else {
+        // manual total: criar/atualizar statement real para refletir o pagamento
+        const { data: auth } = await supabase.auth.getUser()
+        const user_id = auth.user?.id
+        if (!user_id) return
+        // localizar ou criar cartão pelo nome
+        const { data: cards } = await supabase.from("cards").select("*").eq("name", item.cardName).limit(1)
+        let cardId = cards?.[0]?.id as string | undefined
+        if (!cardId) {
+          const { data: created } = await supabase.from("cards").insert({ name: item.cardName, due_day: 28 }).select().single()
+          cardId = created?.id
+        }
+        if (!cardId) return
+        const payload = checked
+          ? { status: "paid" as const, paid_at: new Date().toISOString() }
+          : { status: "open" as const, paid_at: null }
+        await supabase
+          .from("card_statements")
+          .upsert(
+            {
+              user_id,
+              card_id: cardId,
+              statement_month: month,
+              due_date: item.due_date,
+              amount_total: item.amount_total,
+              ...payload
+            },
+            { onConflict: "user_id,card_id,statement_month" }
+          )
+      }
+      // recarregar lista para refletir mudanças (converte manual em statement se necessário)
+      const { data: stmts } = await supabase
+        .from("card_statements")
+        .select("*, cards(name)")
+        .eq("statement_month", month)
+        .order("due_date", { ascending: true })
+      const { data: manuals } = await supabase.from("monthly_card_totals").select("*").eq("statement_month", month)
+      const stmtItems: ChecklistItem[] = (stmts || []).map((s: any) => ({
+        id: s.id,
+        source: "statement",
+        cardName: s.cards?.name || "Cartão",
+        due_date: s.due_date,
+        paid_at: s.paid_at,
+        status: s.status,
+        amount_total: Number(s.amount_total || 0),
+        card_id: s.card_id,
+        statement_id: s.id
+      }))
+      const stmtCardNames = new Set(stmtItems.map((i) => i.cardName))
+      const manualItems: ChecklistItem[] = (manuals || [])
+        .filter((m: MonthlyCardTotal) => !stmtCardNames.has(m.card_name))
+        .map((m: MonthlyCardTotal) => ({
+          id: `manual-${m.id}`,
+          source: "manual",
+          cardName: m.card_name,
+          due_date: `${m.statement_month}-28`,
+          paid_at: null,
+          status: "open",
+          amount_total: Number(m.amount_total || 0)
+        }))
+      setChecklist([...stmtItems, ...manualItems].sort((a, b) => a.due_date.localeCompare(b.due_date)))
+    } finally {
+      setSavingStmt(null)
+    }
+  }
+
   return (
     <main className="p-4 space-y-6">
       <AppHeader title={`Dashboard Mensal — ${formatMonthTitle(month)}`} />
@@ -265,6 +401,46 @@ export default function MonthlyDashboard() {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <div className="text-lg font-semibold">Pagamentos de cartões (checklist)</div>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-muted-foreground">
+                <th className="text-left py-2 pr-3">Cartão</th>
+                <th className="text-left py-2 pr-3">Vencimento</th>
+                <th className="text-left py-2 pr-3">Pagamento</th>
+                <th className="text-left py-2 pr-3">Valor</th>
+                <th className="text-left py-2 pr-3">Pago</th>
+              </tr>
+            </thead>
+            <tbody>
+              {checklist.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-3 text-muted-foreground">Sem faturas neste mês.</td>
+                </tr>
+              )}
+              {checklist.map((st) => (
+                <tr key={st.id} className="border-t border-border">
+                  <td className="py-2 pr-3">{st.cardName}</td>
+                  <td className="py-2 pr-3">{(st.due_date || "").slice(0, 10)}</td>
+                  <td className="py-2 pr-3">{st.paid_at ? String(st.paid_at).slice(0, 10) : "-"}</td>
+                  <td className="py-2 pr-3"><CurrencyText value={Number(st.amount_total)} /></td>
+                  <td className="py-2 pr-3">
+                    <input
+                      type="checkbox"
+                      checked={st.status === "paid"}
+                      onChange={(e) => togglePaid(st.id, e.target.checked)}
+                      disabled={savingStmt === st.id}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
