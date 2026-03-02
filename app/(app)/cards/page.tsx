@@ -125,11 +125,18 @@ export default function CardExpensesPage() {
       <AppHeader title={`Gastos do Cartão — ${formatMonthTitle(month)}`} />
       {(!data && (isLoading || isFetching)) && <UpdatingOverlay label="Atualizando dados..." />}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <Link href="/import">
-          <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
-            Importar fatura
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/import">
+            <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
+              Importar fatura
+            </Button>
+          </Link>
+          <Link href="/preferences">
+            <Button className="bg-secondary text-secondary-foreground hover:brightness-110">
+              Preferências
+            </Button>
+          </Link>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Button
@@ -154,6 +161,11 @@ export default function CardExpensesPage() {
             <h2 className="text-lg font-semibold text-foreground">
               Lançamentos do cartão
             </h2>
+            <div className="mt-1">
+              <Badge className="text-foreground">
+                Modo: {cardMode === "import" ? "Importar fatura (CSV)" : "Informar valor do cartão"}
+              </Badge>
+            </div>
             {cardMode === "import" ? (
               <p className="text-sm text-muted-foreground">Edite as categorias diretamente nos itens.</p>
             ) : (
