@@ -106,12 +106,25 @@ export default function MonthlyDashboard() {
 
   const totalsByCategoryAll = useMemo(() => {
     const map = new Map<string, number>()
+    // Cartões (transações)
     for (const t of transactions) {
       const name = normalizeCategory(t.category)
       map.set(name, (map.get(name) || 0) + Number(t.amount_brl || 0))
     }
+    // Despesas fixas (bills)
+    const bills = (data?.bills || []) as Array<{ amount: number; category?: string | null }>
+    for (const b of bills) {
+      const label = b.category && b.category.trim() ? normalizeCategory(b.category) : "Despesas fixas"
+      map.set(label, (map.get(label) || 0) + Number(b.amount || 0))
+    }
+    // Despesas variáveis
+    const vars = ((data as { variableExpenses?: VariableExpense[] })?.variableExpenses || []) as VariableExpense[]
+    for (const v of vars) {
+      const label = (v.category && String(v.category).trim()) ? normalizeCategory(v.category as string) : "Despesas variáveis"
+      map.set(label, (map.get(label) || 0) + Number(v.amount || 0))
+    }
     return Array.from(map.entries()).map(([name, total]) => ({ name, total }))
-  }, [transactions])
+  }, [transactions, data])
 
   const totalsByCategory = useMemo(() => {
     if (!selectedCategory) return totalsByCategoryAll

@@ -161,11 +161,6 @@ export default function CardExpensesPage() {
             <h2 className="text-lg font-semibold text-foreground">
               Lançamentos do cartão
             </h2>
-            <div className="mt-1">
-              <Badge className="text-foreground">
-                Modo: {cardMode === "import" ? "Importar fatura (CSV)" : "Informar valor do cartão"}
-              </Badge>
-            </div>
             {cardMode === "import" ? (
               <p className="text-sm text-muted-foreground">Edite as categorias diretamente nos itens.</p>
             ) : (
