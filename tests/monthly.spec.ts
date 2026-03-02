@@ -14,7 +14,7 @@ describe("monthly projection with monthly incomes and variable expenses", () => 
     const variableExpensesTotal = 250 // despesas variáveis do mês
     const investmentMonthly = 100 // investimentos
 
-    const proj = computeMonthlyProjection(incomes as any, bills as any, statements as any, monthlyIncomesTotal, investmentMonthly + variableExpensesTotal)
+    const proj = computeMonthlyProjection(8, incomes as any, bills as any, statements as any, monthlyIncomesTotal, investmentMonthly + variableExpensesTotal)
     // totalIncome = 1500 + 450 = 1950
     // totalBills = 300 + (100 + 250) = 650
     // totalStatements = 200

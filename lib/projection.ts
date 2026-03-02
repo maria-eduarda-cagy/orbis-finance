@@ -103,7 +103,9 @@ export function unifyCardStatements(statements: CardStatement[], manualTotals: M
   })
 }
 
+// currentMonth: número de 1-12 representando o mês de referência do cálculo.
 export function computeMonthlyProjection(
+  currentMonth: number,
   incomes: IncomeRule[],
   bills: BillRule[],
   statements: CardStatement[],
