@@ -1,7 +1,7 @@
 "use client"
 import { useMemo, useState } from "react"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
-import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
+import { fetchMonthData, computeMonthlyProjection, computePrevNet } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
@@ -67,14 +67,12 @@ export default function MonthlyDashboard() {
     const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
     const createdMonth = createdAt ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}` : null
     if (createdMonth && month <= createdMonth) return 0
-    const incomes = data?.incomes || []
-    const bills = data?.bills || []
-    const prevStatements = data?.prevStatements || []
-    const prevTransactions = (data?.prevTransactions || []).reduce((s: number, r: { amount_brl: number }) => s + Number(r.amount_brl || 0), 0)
-    const totalIncome = incomes.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
-    const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
-    const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
-    return totalIncome - totalBills - totalStatements
+    return computePrevNet(
+      (data?.incomes || []) as any,
+      (data?.bills || []) as any,
+      (data?.prevStatements || []) as any,
+      (data?.prevTransfers || []) as any
+    )
   }, [data, month])
 
   const projWithCarry = useMemo(() => {
