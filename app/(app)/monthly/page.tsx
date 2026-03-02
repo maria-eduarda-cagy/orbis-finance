@@ -14,6 +14,7 @@ import { normalizeCategory } from "../../../utils/category"
 import { CurrencyText } from "../../../components/format/CurrencyText"
 import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
 import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
+import Link from "next/link"
 
 export default function MonthlyDashboard() {
   const { hidden } = useNumberVisibility()
@@ -225,48 +226,60 @@ export default function MonthlyDashboard() {
         </div>
       </div>
 
-      <Card className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={totalsByCategoryAll}
-            barCategoryGap={22}
-            onClick={(e) => {
-              const payload = (e as { activePayload?: Array<{ payload?: { name?: string } }> })?.activePayload?.[0]?.payload
-              const name = payload?.name
-              if (!name) return
-              setSelectedCategory((current) => (current === name ? null : name))
-            }}
-          >
-            <XAxis dataKey="name" axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={(v) => (hidden ? "-" : `${Number(v).toFixed(0)}`)} axisLine={false} tickLine={false} />
-            <Tooltip
-              cursor={{ fill: "rgba(79,124,255,0.08)" }}
-              formatter={(value) => (hidden ? `R$ -` : `R$ ${Number(value).toFixed(2)}`)}
-              contentStyle={{
-                background: "var(--background-elevated)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
-                borderRadius: 8
+      {totalsByCategoryAll.length === 0 ? (
+        <Card className="h-80 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="text-sm text-muted-foreground">Sem dados para exibir o gráfico.</div>
+            <div className="text-sm font-medium">Informe seus gastos do cartão para visualizar categorias.</div>
+            <Link href="/cards">
+              <Button>Ir para Gastos do Cartão</Button>
+            </Link>
+          </div>
+        </Card>
+      ) : (
+        <Card className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={totalsByCategoryAll}
+              barCategoryGap={22}
+              onClick={(e) => {
+                const payload = (e as { activePayload?: Array<{ payload?: { name?: string } }> })?.activePayload?.[0]?.payload
+                const name = payload?.name
+                if (!name) return
+                setSelectedCategory((current) => (current === name ? null : name))
               }}
-              labelStyle={{ color: "var(--muted-foreground)" }}
-              itemStyle={{ color: "var(--foreground)" }}
-            />
-            <Bar dataKey="total" activeBar={{ fillOpacity: 0.4 }} radius={[10, 10, 6, 6]}>
-              {totalsByCategoryAll.map((item, index) => {
-                const isSelected = selectedCategory ? item.name === selectedCategory : true
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={barColors[index % barColors.length]}
-                    fillOpacity={isSelected ? 1 : 0.3}
-                    style={{ cursor: "pointer" }}
-                  />
-                )
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+            >
+              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => (hidden ? "-" : `${Number(v).toFixed(0)}`)} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: "rgba(79,124,255,0.08)" }}
+                formatter={(value) => (hidden ? `R$ -` : `R$ ${Number(value).toFixed(2)}`)}
+                contentStyle={{
+                  background: "var(--background-elevated)",
+                  border: "1px solid var(--border)",
+                  color: "var(--foreground)",
+                  borderRadius: 8
+                }}
+                labelStyle={{ color: "var(--muted-foreground)" }}
+                itemStyle={{ color: "var(--foreground)" }}
+              />
+              <Bar dataKey="total" activeBar={{ fillOpacity: 0.4 }} radius={[10, 10, 6, 6]}>
+                {totalsByCategoryAll.map((item, index) => {
+                  const isSelected = selectedCategory ? item.name === selectedCategory : true
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={barColors[index % barColors.length]}
+                      fillOpacity={isSelected ? 1 : 0.3}
+                      style={{ cursor: "pointer" }}
+                    />
+                  )
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       {selectedCategory && (
         <div className="flex items-center gap-2">
