@@ -85,7 +85,7 @@ export default function PreferencesPage() {
           </div>
         </div>
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => router.back()} />
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <Card className="w-full max-w-3xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
