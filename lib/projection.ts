@@ -122,18 +122,15 @@ export function computeDailyAllowance(net: number, daysRemaining: number) {
   return Math.floor(net / daysRemaining)
 }
 
+// O saldo a carregar para o próximo mês deve ser o saldo projetado do mês anterior,
+// isto é, receitas recorrentes - despesas fixas - total de faturas do mês anterior.
 export function computePrevNet(
   incomes: IncomeRule[],
   bills: BillRule[],
   prevStatements: CardStatement[],
-  prevTransfers: Array<{ amount: number; direction: "entrada" | "saida" }>
 ) {
   const totalIncome = incomes.reduce((s, r) => s + r.amount, 0)
   const totalBills = bills.reduce((s, r) => s + r.amount, 0)
   const totalStatements = prevStatements.reduce((s, st) => s + st.amount_total, 0)
-  const transfersNet = (prevTransfers || []).reduce(
-    (s, t) => s + (t.direction === "entrada" ? Number(t.amount || 0) : -Number(t.amount || 0)),
-    0
-  )
-  return totalIncome - totalBills - totalStatements + transfersNet
+  return totalIncome - totalBills - totalStatements
 }

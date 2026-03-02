@@ -70,8 +70,7 @@ export default function MonthlyDashboard() {
     return computePrevNet(
       (data?.incomes || []) as any,
       (data?.bills || []) as any,
-      (data?.prevStatements || []) as any,
-      (data?.prevTransfers || []) as any
+      (data?.prevStatements || []) as any
     )
   }, [data, month])
 
