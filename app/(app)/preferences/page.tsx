@@ -1,5 +1,6 @@
 "use client"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { AppHeader } from "../../../components/AppHeader"
 import { Card } from "../../../components/ui/card"
 import { ThemeToggle } from "../../../components/theme/ThemeToggle"
@@ -10,6 +11,7 @@ import { BANK_OPTIONS } from "../../../utils/constants"
 import { formatMonth } from "../../../utils/date"
 
 export default function PreferencesPage() {
+  const router = useRouter()
   const [mode, setMode] = useState<"import" | "total_only">("import")
   const [selectedMonth, setSelectedMonth] = useState(formatMonth(new Date()))
   const [cardName, setCardName] = useState("")
@@ -54,26 +56,68 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main className="p-4 space-y-6">
-      <AppHeader title="Preferências" />
+    <main className="relative min-h-screen">
+      <div className="md:hidden p-4 space-y-6">
+        <AppHeader title="Preferências" />
 
-      <Card>
-        <div className="text-lg font-semibold">Tema</div>
-        <div className="mt-3">
-          <ThemeToggle />
+        <Card>
+          <div className="text-lg font-semibold">Tema</div>
+          <div className="mt-3">
+            <ThemeToggle />
+          </div>
+        </Card>
+
+        <Card>
+          <div className="text-lg font-semibold">Fatura do cartão</div>
+          <p className="text-sm text-muted-foreground mt-1">Como prefere considerar os gastos do cartão?</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button className={mode === "import" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("import")}>Importar fatura (CSV)</Button>
+            <Button className={mode === "total_only" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("total_only")}>Informar apenas o valor do cartão</Button>
+          </div>
+          {/* No modo "valor do cartão", o formulário agora está em /cards */}
+        </Card>
+      </div>
+
+      <div className="hidden md:block">
+        <div className="pointer-events-none opacity-30">
+          <div className="p-4">
+            <AppHeader title="Preferências" />
+          </div>
         </div>
-      </Card>
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => router.back()} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <Card className="w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Preferências</h2>
+                <p className="text-sm text-muted-foreground">Ajuste tema e como considerar a fatura do cartão.</p>
+              </div>
+              <Button className="bg-secondary text-secondary-foreground hover:brightness-110" onClick={() => router.back()}>
+                Fechar
+              </Button>
+            </div>
 
-      <Card>
-        <div className="text-lg font-semibold">Fatura do cartão</div>
-        <p className="text-sm text-muted-foreground mt-1">Como prefere considerar os gastos do cartão?</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button className={mode === "import" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("import")}>Importar fatura (CSV)</Button>
-          <Button className={mode === "total_only" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("total_only")}>Informar apenas o valor do cartão</Button>
+            <div className="mt-6 space-y-6">
+              <Card>
+                <div className="text-lg font-semibold">Tema</div>
+                <div className="mt-3">
+                  <ThemeToggle />
+                </div>
+              </Card>
+
+              <Card>
+                <div className="text-lg font-semibold">Fatura do cartão</div>
+                <p className="text-sm text-muted-foreground mt-1">Como prefere considerar os gastos do cartão?</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button className={mode === "import" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("import")}>Importar fatura (CSV)</Button>
+                  <Button className={mode === "total_only" ? "" : "bg-secondary text-secondary-foreground hover:brightness-110"} onClick={() => saveMode("total_only")}>Informar apenas o valor do cartão</Button>
+                </div>
+                {/* No modo "valor do cartão", o formulário agora está em /cards */}
+              </Card>
+            </div>
+          </Card>
         </div>
-
-        {/* No modo "valor do cartão", o formulário agora está em /cards */}
-      </Card>
+      </div>
     </main>
   )
 }

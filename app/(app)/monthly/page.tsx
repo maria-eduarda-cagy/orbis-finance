@@ -232,7 +232,7 @@ export default function MonthlyDashboard() {
             <div className="text-sm text-muted-foreground">Sem dados para exibir o gráfico.</div>
             <div className="text-sm font-medium">Informe seus gastos do cartão para visualizar categorias.</div>
             <Link href="/cards">
-              <Button>Ir para Gastos do Cartão</Button>
+              <Button className="mt-8">Ir para Gastos do Cartão</Button>
             </Link>
           </div>
         </Card>
