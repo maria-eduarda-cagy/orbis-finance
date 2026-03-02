@@ -32,6 +32,7 @@ export default function CardExpensesPage() {
   const [savingCategory, setSavingCategory] = useState(false);
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate]);
   const [manualTotals, setManualTotals] = useState<MonthlyCardTotal[]>([]);
+  const [manualDueDate, setManualDueDate] = useState<string>("");
 
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
@@ -75,15 +76,41 @@ export default function CardExpensesPage() {
     if (!user_id) return;
     const name = manualCardName === "Outro" ? customCardName.trim() : manualCardName;
     if (!name || !manualAmount) return;
+    const dueDate = manualDueDate && manualDueDate.trim() ? manualDueDate : `${month}-28`;
     const { data: inserted } = await supabase.from("monthly_card_totals").upsert({
       user_id,
       card_name: name,
       amount_total: Number(manualAmount),
       statement_month: month
     }).select().single();
+    // Garantir existência de statement (para due date correto e integração com checklist/gráfico)
+    // localizar/criar cartão
+    const { data: cards } = await supabase.from("cards").select("*").eq("name", name).limit(1);
+    let cardId = cards?.[0]?.id as string | undefined;
+    if (!cardId) {
+      const { data: created } = await supabase.from("cards").insert({ name, due_day: Number(dueDate.slice(-2)) || 28 }).select().single();
+      cardId = created?.id;
+    }
+    if (cardId) {
+      await supabase
+        .from("card_statements")
+        .upsert(
+          {
+            user_id,
+            card_id: cardId,
+            statement_month: month,
+            due_date: dueDate,
+            amount_total: Number(manualAmount),
+            status: "open",
+            paid_at: null
+          },
+          { onConflict: "user_id,card_id,statement_month" }
+        );
+    }
     setManualCardName("");
     setCustomCardName("");
     setManualAmount("");
+    setManualDueDate("");
     if (inserted) {
       setManualTotals((prev) => {
         const others = prev.filter((t) => !(t.card_name === name && t.statement_month === month));
@@ -156,7 +183,7 @@ export default function CardExpensesPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/import">
             <Button className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold">
-              Importar fatura
+              Importar
             </Button>
           </Link>
           <Link href="/preferences">
@@ -232,9 +259,9 @@ export default function CardExpensesPage() {
         </div>
         )}
         {cardMode === "total_only" && (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
             <div>
-              <label className="text-sm text-muted-foreground">Mês da fatura</label>
+              <label className="text-sm text-muted-foreground">Mês</label>
               <Input type="month" value={month} onChange={(e) => setSelectedDate(new Date(e.target.value + "-01"))} />
             </div>
             <div>
@@ -255,15 +282,24 @@ export default function CardExpensesPage() {
                 <Input className="mt-2" value={customCardName} onChange={(e) => setCustomCardName(e.target.value)} placeholder="Nome do cartão" />
               )}
             </div>
-            <div className="sm:col-span-2">
-              <label className="text-sm text-muted-foreground">Valor total da fatura</label>
+            <div>
+              <label className="text-sm text-muted-foreground">Vencimento</label>
+              <Input
+                type="date"
+                value={manualDueDate}
+                onChange={(e) => setManualDueDate(e.target.value)}
+                placeholder={`${month}-28`}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Valor total</label>
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
                 <Input type="number" inputMode="decimal" step="0.01" min="0" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="Valor" className="pl-8" />
               </div>
             </div>
-            <div className="sm:col-span-4">
-              <Button onClick={saveManualTotal}>Salvar valor do cartão</Button>
+            <div className="md:col-start-4 md:justify-self-end md:self-end">
+              <Button onClick={saveManualTotal} className="mt-2 md:mt-0">Salvar valor do cartão</Button>
             </div>
           </div>
         )}
