@@ -111,6 +111,17 @@ export default function MonthlyDashboard() {
       const name = normalizeCategory(t.category)
       map.set(name, (map.get(name) || 0) + Number(t.amount_brl || 0))
     }
+    // Se não há transações (modo manual), usar statements por cartão
+    if (transactions.length === 0) {
+      const statements = (data?.statements || []) as Array<{ card_id: string; amount_total: number }>
+      for (const st of statements) {
+        let label = "Cartão"
+        if (st.card_id && st.card_id.startsWith("manual-")) {
+          label = st.card_id.replace(/^manual-/, "")
+        }
+        map.set(label, (map.get(label) || 0) + Number(st.amount_total || 0))
+      }
+    }
     // Despesas fixas (bills)
     const bills = (data?.bills || []) as Array<{ amount: number; category?: string | null }>
     for (const b of bills) {

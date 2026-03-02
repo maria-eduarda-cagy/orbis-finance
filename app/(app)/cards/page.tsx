@@ -8,7 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { AppHeader } from "../../../components/AppHeader";
 import Link from "next/link";
-import { CardTransaction } from "../../../lib/types";
+import { CardTransaction, MonthlyCardTotal } from "../../../lib/types";
 import { getSupabase } from "../../../lib/supabaseClient";
 import { formatMonth, formatMonthTitle } from "../../../utils/date";
 import { BANK_OPTIONS } from "../../../utils/constants";
@@ -16,6 +16,7 @@ import { normalizeCategory } from "../../../utils/category";
 import { CATEGORY_OPTIONS } from "../../../utils/constants";
 import { CurrencyText } from "../../../components/format/CurrencyText";
 import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader";
+import { ConfirmButton } from "../../../components/ui/ConfirmButton";
 
 export default function CardExpensesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -30,6 +31,7 @@ export default function CardExpensesPage() {
   const [editingCategory, setEditingCategory] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate]);
+  const [manualTotals, setManualTotals] = useState<MonthlyCardTotal[]>([]);
 
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
@@ -48,8 +50,14 @@ export default function CardExpensesPage() {
       const { data } = await supabase.from("user_card_mode").select("mode").single();
       if (data?.mode === "import" || data?.mode === "total_only") setCardMode(data.mode);
     }
+    async function loadManualTotals() {
+      const supabase = getSupabase();
+      const { data } = await supabase.from("monthly_card_totals").select("*").eq("statement_month", month).order("card_name", { ascending: true });
+      setManualTotals((data || []) as MonthlyCardTotal[]);
+    }
     loadMode();
-  }, []);
+    loadManualTotals();
+  }, [month]);
 
   async function saveManualTotal() {
     const supabase = getSupabase();
@@ -58,17 +66,28 @@ export default function CardExpensesPage() {
     if (!user_id) return;
     const name = manualCardName === "Outro" ? customCardName.trim() : manualCardName;
     if (!name || !manualAmount) return;
-    await supabase.from("monthly_card_totals").upsert({
+    const { data: inserted } = await supabase.from("monthly_card_totals").upsert({
       user_id,
       card_name: name,
       amount_total: Number(manualAmount),
       statement_month: month
-    });
+    }).select().single();
     setManualCardName("");
     setCustomCardName("");
     setManualAmount("");
+    if (inserted) {
+      setManualTotals((prev) => {
+        const others = prev.filter((t) => !(t.card_name === name && t.statement_month === month));
+        return [...others, inserted as MonthlyCardTotal].sort((a, b) => a.card_name.localeCompare(b.card_name));
+      });
+    }
   }
 
+  async function deleteManualTotal(id: string) {
+    const supabase = getSupabase();
+    await supabase.from("monthly_card_totals").delete().eq("id", id);
+    setManualTotals((prev) => prev.filter((t) => t.id !== id));
+  }
   const transactions = useMemo(() => {
     const list = (data?.transactions || []) as CardTransaction[];
     return hideNegative ? list.filter((t) => Number(t.amount_brl) >= 0) : list;
@@ -305,8 +324,25 @@ export default function CardExpensesPage() {
           ))}
         </div>
         ) : (
-          <div className="mt-4 text-sm text-muted-foreground">
-            O valor total informado do cartão será considerado nas despesas. Para detalhar categorias, mude para “Importar fatura (CSV)” em Preferências.
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="text-muted-foreground">
+              O valor total informado do cartão será considerado nas despesas. Para detalhar categorias, mude para “Importar fatura (CSV)” em Preferências.
+            </div>
+            <div>
+              <div className="text-foreground font-medium mb-2">Valores informados</div>
+              <div className="space-y-2">
+                {manualTotals.length === 0 && <div className="text-muted-foreground">Nenhum valor informado para {month}.</div>}
+                {manualTotals.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between rounded-lg bg-background-elevated p-3 shadow-[0_5px_12px_rgba(6,10,18,0.14)]">
+                    <div className="font-medium text-foreground">{t.card_name}</div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold"><CurrencyText value={Number(t.amount_total)} /></span>
+                      <ConfirmButton onConfirm={() => deleteManualTotal(t.id)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </Card>
