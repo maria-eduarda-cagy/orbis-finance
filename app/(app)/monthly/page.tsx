@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { fetchMonthData, computeMonthlyProjection } from "../../../lib/projection"
 import { Card } from "../../../components/ui/card"
@@ -13,7 +13,7 @@ import { formatMonth, formatMonthTitle } from "../../../utils/date"
 import { normalizeCategory } from "../../../utils/category"
 import { CurrencyText } from "../../../components/format/CurrencyText"
 import { useNumberVisibility } from "../../../components/visibility/NumberVisibilityProvider"
-import { LoaderInline, LoadingCard, UpdatingOverlay } from "../../../components/ui/loader"
+import { UpdatingOverlay } from "../../../components/ui/loader"
 import Link from "next/link"
 
 export default function MonthlyDashboard() {
@@ -24,10 +24,43 @@ export default function MonthlyDashboard() {
   const [includeCarry, setIncludeCarry] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const month = useMemo(() => formatMonth(selectedDate), [selectedDate])
+  const prevMonth = useMemo(() => {
+    const d = new Date(selectedDate)
+    d.setMonth(d.getMonth() - 1)
+    return d
+  }, [selectedDate])
+  const prevMonthStr = useMemo(() => formatMonth(prevMonth), [prevMonth])
 
   const { data, refetch, isLoading, isFetching } = useQuery({
     queryKey: ["month", month],
     queryFn: () => fetchMonthData(month),
+    placeholderData: keepPreviousData,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always"
+  })
+
+  // Persistência por mês (localStorage) para a opção "Incluir saldo do mês anterior"
+  useEffect(() => {
+    try {
+      const stored = typeof window !== "undefined" ? localStorage.getItem(`includeCarry:${month}`) : null
+      if (stored !== null) setIncludeCarry(stored === "1")
+    } catch {}
+  }, [month])
+  const onToggleIncludeCarry = (v: boolean) => {
+    setIncludeCarry(v)
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`includeCarry:${month}`, v ? "1" : "0")
+      }
+    } catch {}
+  }
+
+  const { data: prevData } = useQuery({
+    queryKey: ["month", prevMonthStr],
+    queryFn: () => fetchMonthData(prevMonthStr),
     placeholderData: keepPreviousData,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
@@ -60,22 +93,27 @@ export default function MonthlyDashboard() {
       (s: number, r: { amount: number }) => s + Number(r.amount || 0),
       0
     )
-    return computeMonthlyProjection(incomes, bills, statements, monthlyIncomesTotal, investmentMonthly + variableExpensesTotal)
-  }, [data, investmentMonthly, variableExpensesTotal])
+    const currentMonthNumber = new Date(month + "-01").getMonth() + 1
+    return computeMonthlyProjection(currentMonthNumber, incomes, bills, statements, monthlyIncomesTotal, investmentMonthly + variableExpensesTotal)
+  }, [data, investmentMonthly, variableExpensesTotal, month])
 
   const prevNet = useMemo(() => {
-    const createdAt = data?.userCreatedAt ? new Date(data.userCreatedAt) : null
-    const createdMonth = createdAt ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}` : null
-    if (createdMonth && month <= createdMonth) return 0
-    const incomes = data?.incomes || []
-    const bills = data?.bills || []
-    const prevStatements = data?.prevStatements || []
-    const prevTransactions = (data?.prevTransactions || []).reduce((s: number, r: { amount_brl: number }) => s + Number(r.amount_brl || 0), 0)
-    const totalIncome = incomes.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
-    const totalBills = bills.reduce((s: number, r: { amount: number }) => s + r.amount, 0)
-    const totalStatements = prevStatements.reduce((s: number, r: { amount_total: number }) => s + r.amount_total, 0) + prevTransactions
-    return totalIncome - totalBills - totalStatements
-  }, [data, month])
+    const incomesPrev = (prevData?.incomes || []) as Array<{ amount: number }>
+    const billsPrev = (prevData?.bills || []) as Array<{ amount: number }>
+    const statementsPrev = (prevData?.statements || []) as Array<{ amount_total: number }>
+    const monthlyIncomesPrev = ((prevData as { monthlyIncomes?: Array<{ amount: number }> })?.monthlyIncomes || []).reduce(
+      (s: number, r: { amount: number }) => s + Number(r.amount || 0),
+      0
+    )
+    const investmentPctPrev = Number((prevData as { investmentPercentage?: number })?.investmentPercentage || 0)
+    const investmentMonthlyPrev = incomesPrev.reduce((s, r) => s + r.amount, 0) * (investmentPctPrev / 100)
+    const variableExpensesPrev = ((prevData as { variableExpenses?: Array<{ amount: number }> })?.variableExpenses || []).reduce(
+      (s: number, r: { amount: number }) => s + Number(r.amount || 0),
+      0
+    )
+    const res = computeMonthlyProjection(prevMonth.getMonth() + 1, incomesPrev as any, billsPrev as any, statementsPrev as any, monthlyIncomesPrev, investmentMonthlyPrev + variableExpensesPrev)
+    return res.net
+  }, [prevData, prevMonthStr, prevMonth])
 
   const projWithCarry = useMemo(() => {
     if (!includeCarry) return proj
@@ -230,7 +268,7 @@ export default function MonthlyDashboard() {
 
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2 rounded-full bg-background-elevated px-3 py-2 shadow-[0_3px_8px_rgba(6,10,18,0.1)]">
-          <input type="checkbox" checked={includeCarry} onChange={(e) => setIncludeCarry(e.target.checked)} />
+          <input type="checkbox" checked={includeCarry} onChange={(e) => onToggleIncludeCarry(e.target.checked)} />
           Incluir saldo do mês anterior
         </label>
         <span>Saldo inicial (mês anterior): <CurrencyText value={prevNet} /></span>

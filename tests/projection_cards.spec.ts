@@ -8,7 +8,7 @@ describe("unifyCardStatements and projection totals", () => {
     const unified = unifyCardStatements([], [{ id: "1", user_id: "u", card_name: "C6", amount_total: 500, statement_month: month }], month as any)
     expect(unified.length).toBe(1)
     expect(unified[0].amount_total).toBe(500)
-    const proj = computeMonthlyProjection([], [], unified, 0, 0)
+    const proj = computeMonthlyProjection(2, [], [], unified, 0, 0)
     expect(proj.totalStatements).toBe(500)
   })
 
@@ -17,7 +17,7 @@ describe("unifyCardStatements and projection totals", () => {
     const manual = [{ id: "1", user_id: "u", card_name: "C6", amount_total: 500, statement_month: month }]
     const unified = unifyCardStatements(imported as any, manual as any, month as any)
     expect(unified.length).toBe(1)
-    const proj = computeMonthlyProjection([], [], unified as any, 0, 0)
+    const proj = computeMonthlyProjection(2, [], [], unified as any, 0, 0)
     expect(proj.totalStatements).toBe(700)
   })
 })
